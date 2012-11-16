@@ -1,4 +1,4 @@
-security
+Mozilla Security Repository
 ========
 
-Repository for various tools around security
+This repository will contain various tools around security at Mozilla. Work in progress :)
