@@ -36,12 +36,12 @@ options = {
     'resolution':       'FIXED',
     # Ignore old bugs, should be fixed at most 180 days ago
     'chfieldto':        'Now',
-    'chfieldfrom':      '-60d',
+    'chfieldfrom':      '-180d',
     'chfield':          'resolution',
     'chfieldvalue':     'FIXED',
-     # Advanced search criteria
+    # Advanced search criteria
     'query_format':     'advanced',
-     # Should have an [sg:crit/high tag in whiteboard
+    # Should have an [sg:crit/high tag in whiteboard
     'type0-0-0':        'regexp',
     'field0-0-0':       'status_whiteboard',
     'value0-0-0':       '\[sg:(critical|high)',
@@ -51,6 +51,16 @@ options = {
     'value0-0-1':       '(sec-critical|sec-high)',
     'include_fields':   '_default',
 }
+
+debug = False
+
+def printOptionsComment(opts):
+  commentStr = str(opts)
+  commentStrParts = commentStr.strip('{}').split(', ')
+
+  print "## Bugzilla Search Criteria ##"
+  for commentStrPart in commentStrParts:
+    print "# " + commentStrPart
 
 def fetchBug(bug_id):
   """Fetch the bug for the given bug_id and apply necessary workarounds."""
@@ -77,6 +87,25 @@ def extractRevisionsFromURL(text):
     return revisions
 
   return None
+
+def hgCheckLog(repoDir, rev, bugnum):
+  """Given a HG repository, a revision and a bug number, return true if the bug number is in the commit message."""
+  origCwd = os.getcwd()
+  os.chdir(repoDir)
+
+  if debug:
+    print "Running hg log..."
+  
+  logDesc = subprocess.check_output(['hg', 'log', '-r', rev, '--template', '{desc}'])
+
+  os.chdir(origCwd)
+
+  bugInLog = (str(bugnum) in logDesc)
+
+  if not bugInLog:
+    print >> sys.stderr, "Warning: Ignoring possible false positive (bug %s, revision %s)" % (str(bugnum), rev)
+
+  return bugInLog
 
 def hgDiffStat(repoDir, rev):
   """Given a HG repository and revision, return the files touched by that revision."""
@@ -114,7 +143,7 @@ def scanBug(bugnum, repoDir):
   """
   # Fetch the bug
   bug = fetchBug(bugnum)
-  
+
   for comment in bug.comments:
     revs = extractRevisionsFromURL(comment.text)
 
@@ -127,6 +156,9 @@ def scanBug(bugnum, repoDir):
     totalFiles = []
 
     for rev in revs:
+      if not hgCheckLog(repoDir, rev, bugnum):
+        continue
+
       files = hgDiffStat(repoDir, rev)
       totalFiles.extend(files)
 
@@ -136,9 +168,14 @@ def scanBug(bugnum, repoDir):
     # a file twice, then this should not be counted as two bugs.
     return list(set(totalFiles))
 
-  print "Warning: No fix found in bug " + str(bugnum)
+  print >> sys.stderr, "Warning: No fix found in bug %s" % str(bugnum)
 
 def main():
+  printOptionsComment(options)
+
+  print "# DATA DESCRIPTOR FOLLOWS"
+  print "# Filename | Number of Changes from Security Bugs"
+
   # Get the bugs from the api
   buglist = bz.get_bug_list(options)
 
@@ -146,7 +183,8 @@ def main():
     print "No bugs found."
     sys.exit(0)
 
-  print "Found %s bugs:" % (len(buglist))
+  if debug:
+    print "Found %s bugs:" % (len(buglist))
 
   dirs = {}
   cnt = 0;
