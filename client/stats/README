@@ -1,5 +1,5 @@
 == Dependencies ==
 
 * bztools for Bugzilla interaction: https://github.com/mozilla/bztools/
-* mechanize for python: sudo pip install mechanize
-* lxml: sudo pip install lxml
+* mechanize for python: sudo pip install mechanize OR sudo apt-get install python-mechanize
+* lxml: sudo pip install lxml OR sudo apt-get install python-lxml
