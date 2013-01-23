@@ -3,3 +3,45 @@
 * bztools for Bugzilla interaction: https://github.com/mozilla/bztools/
 * mechanize for python: sudo pip install mechanize OR sudo apt-get install python-mechanize
 * lxml: sudo pip install lxml OR sudo apt-get install python-lxml
+
+
+== Using ==
+
+WARNING: Please note that all of this is experimental proof-of-concept code. Use at your own
+risk and no guarantees for correctness and accuracy of the returned data.
+
+Running crithighfixes.py will do a live bugzilla query (using your bugzilla login data) in
+order to determine what files have been fixed in the last 180 days due to security bugs rated
+as critical or high. Of course, if you don't have access to these bugs, you might need to
+choose an older timeframe. The output (on stdout) will look like this:
+
+## Bugzilla Search Criteria ##
+# 'product': 'Core'
+# 'field0-0-0': 'status_whiteboard'
+# 'field0-0-1': 'keywords'
+# 'value0-0-1': '(sec-critical|sec-high)'
+# 'value0-0-0': '\\[sg:(critical|high)'
+# 'query_format': 'advanced'
+# 'type0-0-1': 'regexp'
+# 'type0-0-0': 'regexp'
+# 'chfieldfrom': '-180d'
+# 'include_fields': '_default'
+# 'chfield': 'resolution'
+# 'chfieldvalue': 'FIXED'
+# 'resolution': 'FIXED'
+# 'chfieldto': 'Now'
+# DATA DESCRIPTOR FOLLOWS
+# Filename | Number of Changes from Security Bugs
+js/src/jsgc.cpp                                                                 3
+js/src/ion/IonCaches.cpp                                                        2
+js/src/ion/IonBuilder.cpp                                                       1
+[...]
+
+Piping this output through correlate-coverage.py will add coverage data which is pulled live
+from our automated coverage results (experimental):
+
+# DATA DESCRIPTOR FOLLOWS
+# Filename | Number of Changes from Security Bugs | % Line Coverage | Number of lines missing | % Branch Coverage | Number of branches missing
+js/src/jsgc.cpp                                                                 3 91.4 171 71.9 601
+js/src/ion/IonCaches.cpp                                                        2 89.0 115 76.2 171
+js/src/ion/IonBuilder.cpp                                                       1 91.6 279 77.1 510
