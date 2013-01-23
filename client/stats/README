@@ -4,6 +4,11 @@
 * mechanize for python: sudo pip install mechanize OR sudo apt-get install python-mechanize
 * lxml: sudo pip install lxml OR sudo apt-get install python-lxml
 
+* mozilla-central repository: The code expects mozilla-central to be in repos/mozilla-central.
+  You can achieve this using the following commands:
+    mkdir repos
+    cd repos
+    hg clone https://hg.mozilla.org/mozilla-central
 
 == Using ==
 
