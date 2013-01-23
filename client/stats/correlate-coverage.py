@@ -95,12 +95,12 @@ def getFileCoverage(baseURL, filename):
   
 def main():
   currentCovURL = getCurrentCoverageDirectory("http://people.mozilla.org/~choller/firefox/coverage/")
+  dataDescriptorFollows = False
 
   for record in fileinput.input():
     record = record.lstrip().rstrip()
     
     # Preserve comments, possibly append new data column description though
-    dataDescriptorFollows = False
     if record.startswith('#'):
       if "DATA DESCRIPTOR FOLLOWS" in record:
         dataDescriptorFollows = True
