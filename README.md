@@ -22,7 +22,7 @@ This method is preferred over using boto.
   * In the `Name` field enter something like `opsec-security-audit-role`
   * In the `Source` field select `Specify an Amazon S3 template URL` and type in 
  
-    https://s3-us-west-2.amazonaws.com/cf-templates-acnkbhcsm640-us-west-2/2015023txg-opsec-security-audit-trusting-role-cloudformation.json
+    https://s3-us-west-2.amazonaws.com/opsec-cloudformation-templates/opsec-security-audit-trusting-role-cloudformation.json
 
 * Click the `Next` button
 * Deploy the `opsec-security-audit-trusting-role-cloudformation.json` template
