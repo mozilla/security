@@ -2,7 +2,7 @@
   "AWSTemplateFormatVersion":"2010-09-09",
   "Description":"OpSec Security Audit Read Only Role",
   "Resources":{
-    "OpSecSecurityAuditRole":{
+    "OpSecSecurityAuditReadOnlyRole":{
       "Type":"AWS::IAM::Role",
       "Properties":{
         "AssumeRolePolicyDocument":{
@@ -92,7 +92,7 @@
     "OpSecSecurityAuditRoleARN":{
       "Value":{
         "Fn::GetAtt":[
-          "OpSecSecurityAuditRole",
+          "OpSecSecurityAuditReadOnlyRole",
           "Arn"
         ]
       },
