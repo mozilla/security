@@ -7,7 +7,8 @@ import argparse
 
 def type_yaml_config(filename):
     try:
-        return yaml.load(filename)
+        with open(filename) as f:
+            return yaml.load(f)
     except:
         raise argparse.ArgumentTypeError("'%s' is not a valid YAML config "
                                          "file" % filename)
@@ -23,15 +24,6 @@ def get_options():
 def get_account_id_from_arn(arn):
     return arn.split(":")[4]
 
-cft = CloudFormationTemplate(description="AWS CloudTrail Storage Account S3 Storage Bucket")
-
-cft.mappings.add(Mapping("VariableMap", variable_map_mapping))
-
-cft.resources.add(Resource("S3Bucket", 
-                           "AWS::S3::Bucket", 
-                           {"BucketName":"mozilla-cloudtrail-logs"}, 
-                           DeletionPolicy("Retain")))
-
 def build_template(config):
     """
     Build a CloudFormation template allowing for secure CloudTrail log aggregation
@@ -41,9 +33,18 @@ def build_template(config):
 
     variable_map_mapping = {"CloudTrailLogPublishers":
         {"AccountRootARNs": config['AccountRootARNs'] 
-             if config and isinstance(config['AccountRootARNs'], list) 
+             if 'AccountRootARNs' in config and isinstance(config['AccountRootARNs'], list) 
              else []}
         }
+
+    cft = CloudFormationTemplate(description="AWS CloudTrail Storage Account S3 Storage Bucket")
+    
+    cft.mappings.add(Mapping("VariableMap", variable_map_mapping))
+    
+    cft.resources.add(Resource("S3Bucket", 
+                               "AWS::S3::Bucket", 
+                               {"BucketName":"mozilla-cloudtrail-logs"}, 
+                               DeletionPolicy("Retain")))
 
     
     # Build the s3 bucket policy statement list to allow foreign accounts to
