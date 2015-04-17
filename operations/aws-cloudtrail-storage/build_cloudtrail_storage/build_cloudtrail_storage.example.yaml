@@ -1,0 +1,4 @@
+AccountRootARNs:
+- arn:aws:iam::123456789012:root
+- arn:aws:iam::345678901234:root
+- arn:aws:iam::567890123456:root
