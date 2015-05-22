@@ -71,13 +71,15 @@ def get_all_instances(roles,
                     assumed_roles[role_arn] = assumed_role
                 else:
                     continue
+            conn_ec2 = get_connection(assumed_roles[role_arn]['credentials'], region)
+            if not conn_ec2:
+                continue
             data = {'role': role_arn,
                     'date_fetched': date,
                     'account': role_arn.split(':')[4],
                     'region': region.name,
                     'account_alias': assumed_roles[role_arn]['alias']}
-            instances = get_instances(assumed_roles[role_arn]['credentials'],
-                                      region,
+            instances = get_instances(conn_ec2,
                                       data,
                                       ip_address)
             if instances:
@@ -130,7 +132,7 @@ def get_assumed_role(role_arn,
             'alias': alias}
 
 
-def get_instances(credentials, region, additional_data={}, ip_address=None):
+def get_connection(credentials, region):
     try:
         conn_ec2 = boto.connect_ec2(
             aws_access_key_id=credentials.credentials.access_key,
@@ -142,7 +144,10 @@ def get_instances(credentials, region, additional_data={}, ip_address=None):
                       "region %s with exception %s" %
                       (credentials.credentials.access_key, region, e))
         return False
+    return conn_ec2
 
+
+def get_instances(conn_ec2, additional_data={}, ip_address=None):
     instances = conn_ec2.get_only_instances()
     returned_instances = []
     for instance in [x for x in instances if x.state == "running"]:
