@@ -16,8 +16,8 @@ import os.path
 
 
 def get_config():
-    config = {'rich_line_format': '# "{account}", "{region}", "{date}", '
-              '"{name}", "{instance_type}", "{id}", "{account alias}", '
+    config = {'rich_line_format': '# "{account}", "{region}", "{date_fetched}", '
+              '"{name}", "{instance_type}", "{id}", "{account_alias}", '
               '"{tags}"\n{ip_address}',
               'role_session_name': 'ip2instanceRoleSessionName',
               'roles': []}
@@ -110,15 +110,14 @@ def get_instances(config, ip_address=None):
             instances = conn_ec2.get_only_instances()
             for instance in [x for x in instances if x.state == "running"]:
                 if instance.ip_address is not None:
-                    instance.extra_fields = {
-                        'role': role_arn,
-                        'date': date,
-                        'account': role_arn.split(':')[4],
-                        'region': region.name,
-                        'account alias': assumed_roles[role_arn]['alias'],
-                        'name': (instance.tags['Name']
-                                 if 'Name' in instance.tags
-                                 else "")}
+                    instance.role = role_arn
+                    instance.date_fetched = date,
+                    instance.account = role_arn.split(':')[4]
+                    instance.region = region.name
+                    instance.account_alias = assumed_roles[role_arn]['alias']
+                    instance.name = (instance.tags['Name']
+                                     if 'Name' in instance.tags
+                                     else "")
                     if (ip_address is not None
                             and instance.ip_address == ip_address):
                         # short circuit as soon as we find the IP and return it
@@ -135,10 +134,7 @@ def print_ip_list(config, instances):
 
 def print_rich_ip_list(config, instances):
     for instance in instances:
-        extra_fields = instance.extra_fields
-        print config['rich_line_format'].format(
-            **dict(instance.__dict__.items() +
-                   extra_fields.items()))
+        print config['rich_line_format'].format(**instance.__dict__)
 
 
 def main():
