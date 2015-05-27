@@ -43,7 +43,7 @@ Here's how to build this into an RPM on a `RHEL 6 derivative <https://en.wikiped
     sudo yum install rubygems ruby-devel gcc python-setuptools rpm-build
     sudo easy_install pip
     sudo gem install fpm
-    git clone https://github.com/mozilla/nmap-differential-scan.git
+    git clone https://github.com/mozilla/security.git
     
-    cd nmap-differential-scan/ip2instance # This is required
+    cd security/operations/ip2instance # This is required
     fpm -s python -t rpm --workdir ../ ./setup.py

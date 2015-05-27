@@ -21,15 +21,15 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # http://packaging.python.org/en/latest/tutorial.html#version
-    version='1.2.0',
+    version='1.2.1',
 
     description='Search through multiple AWS accounts for instance IP '
                 'addresses',
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/mozilla/nmap-differential-scan'
-        '/tree/master/ip2instance',
+    url='https://github.com/mozilla/security'
+        '/tree/master/operations/ip2instance',
 
     # Author details
     author='Gene Wood',
