@@ -1,0 +1,6 @@
+---
+:yaml:
+  :datadir: /opt/puppet/hiera
+:hierarchy:
+  - "%{::environment}"
+  - common

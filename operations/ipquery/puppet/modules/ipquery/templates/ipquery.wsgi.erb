@@ -1,0 +1,4 @@
+activate_this = '<%= @virtualenv_dir %>/bin/activate_this.py'
+execfile(activate_this, dict(__file__=activate_this))
+
+from ipquery import app as application

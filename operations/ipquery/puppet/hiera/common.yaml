@@ -1,0 +1,13 @@
+---
+install_dir: "/opt/ipquery"
+virtualenv_dir: "%{hiera('install_dir')}/virtualenv"
+apache::mod::wsgi::wsgi_python_home: "%{hiera('virtualenv_dir')}"
+apache::mod::wsgi::wsgi_python_path: "%{hiera('virtualenv_dir')}/site-packages"
+python::virtualenv: true
+# Setting python::dev to true due to bug https://github.com/stankevich/puppet-python/issues/161
+python::dev: true
+ipquery::idp_name: mozilla
+ipquery::install_dir: "%{hiera('install_dir')}"
+ipquery::username: ipqueryuser
+ipquery::virtualenv_dir: "%{hiera('virtualenv_dir')}"
+ipquery::wsgi_filename: "%{hiera('install_dir')}/ipquery.wsgi"

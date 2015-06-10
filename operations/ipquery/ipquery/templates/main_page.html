@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+    <p class="lead">
+        <form class="form-inline" method="post" action="/">
+          <div class="form-group">
+            {{ form.hidden_tag() }}
+            {{ form.ip.label(class_="sr-only") }}
+            <div class="input-group">
+                {{ form.ip(class_="form-control", placeholder="203.0.113.244") }}
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">Lookup IP</button>
+        </form>
+        {% if definition_list is not none %}
+            <dl class="dl-horizontal">
+            {% for attribute in ['name', 'account', 'account_alias', 'region', 'id', 'tags'] %}
+                <dt>{{ attribute }}</dt>
+                <dd>{{ definition_list[attribute] }}</dd>
+            {% endfor %}
+            </dl>
+        {% endif %}
+    </p>
+{% endblock %}
