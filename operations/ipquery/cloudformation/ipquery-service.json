@@ -10,11 +10,11 @@
             "Description":"Name of the Instance Profile granting the IAM Role based permissions needed for IP Query",
             "Type":"String",
             "Default":"OpSecTrustedAuditorInstanceProfile"
-        }
+        },
         "Environment":{
             "Description":"The environment in which you are deploying IP Query",
             "Type":"String",
-            "Default":"Production"
+            "Default":"production"
         }
     },
     "Mappings":{
@@ -130,9 +130,10 @@
                                 "    path: /etc/credstash.yaml\n",
                                 "runcmd:\n",
                                 " - rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm\n",
-                                " - yum install -y puppet rubygems git python-pip\n",
+                                " - rpm -ivh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm\n",
+                                " - yum install -y puppet rubygems git python-pip gcc python-devel libyaml-devel\n",
                                 " - gem install librarian-puppet\n",
-                                " - # pip install credstash\n",
+                                " - echo pip install credstash\n",
                                 " - pip install https://github.com/LuminalOSS/credstash/archive/master.zip\n",
                                 " - mkdir -v -p /opt/puppet/hiera\n",
                                 " - git clone https://github.com/mozilla/security.git /opt/puppet/mozilla-security\n",
@@ -146,8 +147,8 @@
                                     ".yaml\n",
                                 " - mkdir -v -p /opt/puppet/manifests\n",
                                 " - ln -v -s -f /opt/puppet/mozilla-security/operations/ipquery/puppet/manifests/site.pp /opt/puppet/manifests/site.pp\n",
-                                " - 'cd /opt/puppet\n",
-                                    "librarian-puppet install'\n",
+                                " - bash -c \"cd /opt/puppet && ",
+                                    "HOME=/root librarian-puppet install\"\n",
                                 " - puppet apply --modulepath /opt/puppet/modules ",
                                     "--hiera_config /opt/puppet/hiera.yaml ",
                                     "--environment ",

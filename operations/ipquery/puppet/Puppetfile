@@ -15,5 +15,5 @@ mod 'stahnma-epel'
 
 mod 'gene1wood-credstash'
 
-mod 'gene1wood-ipquery',
+mod 'gene1wood-ipquery'
 

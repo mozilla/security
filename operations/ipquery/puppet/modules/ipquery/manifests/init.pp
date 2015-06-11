@@ -44,7 +44,6 @@ class ipquery (
   python::pip { 'ipquery' :
     virtualenv => $virtualenv_dir,
     owner      => 'root',
-    url        => '/opt/puppet/mozilla-security/operations/ipquery',
     require    => [ File[$install_dir],
                     User[$username],
                     Class['python'],

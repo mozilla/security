@@ -52,6 +52,7 @@ Example Configuration
 Here is an example configuration for two foreign AWS accounts
 
 ::
+
     --- 
       secret_key: "11111111-1111-1111-1111-111111111111"
       idp_name: oktadev
