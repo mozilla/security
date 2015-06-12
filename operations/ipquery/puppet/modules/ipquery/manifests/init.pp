@@ -19,6 +19,13 @@ class ipquery (
   $virtualenv_dir = $ipquery::params::virtualenv_dir,
   $wsgi_filename = $ipquery::params::wsgi_filename,
 ) inherits ipquery::params {
+
+  include 'epel' # Workaround for bug https://github.com/stankevich/puppet-python/issues/196
+  include 'python'
+  include 'apache'
+  include 'apache::mod::ssl'
+  include 'apache::mod::wsgi'
+
   $docroot = "${install_dir}/docroot"
 
   file { [ $install_dir, $docroot ]:
@@ -44,33 +51,42 @@ class ipquery (
   python::pip { 'ipquery' :
     virtualenv => $virtualenv_dir,
     owner      => 'root',
-    require    => [ File[$install_dir],
-                    User[$username],
-                    Class['python'],
-                    Package['gcc'],
-                    Package['libffi-devel'],
-                    Package['xmlsec1'],
-                    Package['xmlsec1-openssl'],
-                    Package['openssl-devel'],
-                    Package['libyaml-devel'],
-                    Python::Virtualenv[$virtualenv_dir], ]
-      }
+    require    => [
+      File[$install_dir],
+      User[$username],
+      Class['python'],
+      Package['gcc'],
+      Package['libffi-devel'],
+      Package['xmlsec1'],
+      Package['xmlsec1-openssl'],
+      Package['openssl-devel'],
+      Package['libyaml-devel'],
+      Python::Virtualenv[$virtualenv_dir],
+      Class['epel'], # Workaround for bug https://github.com/stankevich/puppet-python/issues/196
+      
+    ],
+    notify     => Class['apache::service'],
+  }
 
   file { $wsgi_filename:
     content => template('ipquery/ipquery.wsgi.erb'),
+    notify  => Class['apache::service'],
   }
 
   file { '/etc/ipquery.yaml':
     content => template('ipquery/ipquery.yaml.erb'),
+    notify  => Class['apache::service'],
   }
 
   file { $tls_key_filename:
     content => $tls_certificate_key,
     mode    => '0600',
+    notify  => Class['apache::service'],
   }
 
   file { $tls_cert_filename:
     content => $tls_certificate,
+    notify  => Class['apache::service'],
   }
 
   apache::vhost { 'ipquery.opsec.mozilla.com':
@@ -84,11 +100,13 @@ class ipquery (
     ssl                 => true,
     ssl_cert            => $tls_cert_filename,
     ssl_key             => $tls_key_filename,
-    require             => [  File[$tls_cert_filename],
-                              File[$tls_key_filename],
-                              User[$username],
-                              File[$wsgi_filename],
-                              File[$docroot],
-                              Python::Pip['ipquery'], ]
+    require             => [
+      File[$tls_cert_filename],
+      File[$tls_key_filename],
+      User[$username],
+      File[$wsgi_filename],
+      File[$docroot],
+      Python::Pip['ipquery'],
+    ]
   }
 }
