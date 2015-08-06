@@ -2,6 +2,15 @@ Overview
 ========
 ip2instance iterates through multiple AWS accounts, assuming IAM Roles in each account using the STS AssumeRole function and fetches information about instances in those accounts.
 
+Prerequisites
+=============
+* That ip2instance be run on an AWS ec2 instance with an IAM role which has rights to assume other roles
+* That the list of other roles in various foreign AWS accounts
+  * have the permission to Describe instances
+  * allow the role applied to the ec2 instance running ip2instance to assume the target role
+
+Instructions on setting up these roles can be found here : https://github.com/mozilla/security/tree/master/operations/aws-security-auditor
+
 Configuration
 =============
 The ip2instance configuration file is located at `/etc/ip2instance.yaml` . To configure ip2instance create this file and populate it with your `role_session_name` and `roles`
