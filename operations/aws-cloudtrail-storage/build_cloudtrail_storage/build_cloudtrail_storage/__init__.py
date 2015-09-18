@@ -31,11 +31,31 @@ def build_template(config):
     CloudTrail logs
     """
 
-    variable_map_mapping = {"CloudTrailLogPublishers":
-        {"AccountRootARNs": config['AccountRootARNs'] 
-             if 'AccountRootARNs' in config and isinstance(config['AccountRootARNs'], list) 
-             else []}
-        }
+    account_root_arns = (config['AccountRootARNs']
+                         if 'AccountRootARNs' in config 
+                            and isinstance(config['AccountRootARNs'], list)
+                         else [])
+
+    # http://docs.aws.amazon.com/general/latest/gr/rande.html#ct_region
+    cloudtrail_system_accountids = {
+        'us-east-1': '086441151436',
+        'us-west-1': '388731089494',
+        'us-west-2': '113285607260',
+        'eu-west-1': '859597730677',
+        'eu-central-1': '035351147821',
+        'ap-southeast-2': '284668455005',
+        'ap-southeast-1': '903692715234',
+        'ap-northeast-1': '216624486486',
+        'sa-east-1': '814480443879'}
+    
+    cloudtrail_system_arns = ["arn:aws:iam::%s:root" % x for x in cloudtrail_system_accountids.values()]
+    
+    variable_map_mapping = {
+        "CloudTrailLogPublishers":
+            {"AccountRootARNs": account_root_arns},
+        "CloudTrailSystem":
+            {"SystemARNs": cloudtrail_system_arns}
+    }
 
     cft = CloudFormationTemplate(description="AWS CloudTrail Storage Account S3 Storage Bucket")
     
@@ -55,26 +75,29 @@ def build_template(config):
       "Sid":"AWSCloudTrailAclCheck",
       "Effect":"Allow",
       "Principal":{
-        "AWS": find_in_map("VariableMap", "CloudTrailLogPublishers", "AccountRootARNs")
+        "AWS": find_in_map("VariableMap", "CloudTrailSystem", "SystemARNs")
       },
       "Action": ["s3:GetBucketAcl"],
       "Resource": join("", "arn:aws:s3:::", ref("S3Bucket"))
     })
     
-    
+    put_object_resources = []
     for account_arn in variable_map_mapping["CloudTrailLogPublishers"]["AccountRootARNs"]:
-        bucket_policy_statements.append(
+        put_object_resources.append(
+            join("", 
+                 "arn:aws:s3:::", 
+                 ref("S3Bucket"), 
+                 "/AWSLogs/%s/*" % get_account_id_from_arn(account_arn)))
+    
+    bucket_policy_statements.append(
     {
       "Sid":"AWSCloudTrailWrite%s" % get_account_id_from_arn(account_arn),
       "Effect":"Allow",
       "Principal": {
-        "AWS": account_arn
+        "AWS": find_in_map("VariableMap", "CloudTrailSystem", "SystemARNs")
       },
       "Action": ["s3:PutObject"],
-      "Resource": join("", 
-                       "arn:aws:s3:::", 
-                       ref("S3Bucket"), 
-                       "/AWSLogs/%s/*" % get_account_id_from_arn(account_arn)),
+      "Resource": put_object_resources,
       "Condition":{
         "StringEquals":{
           "s3:x-amz-acl":"bucket-owner-full-control"
@@ -97,6 +120,44 @@ def build_template(config):
             }
             )
         )
+
+    # Create a single SNS Topic that each AWS account can publish to to report
+    # on the CloudFormation progress
+    cft.resources.add(
+        Resource("ForeignAccountStatusTopic",
+            "AWS::SNS::Topic",
+            {
+                "DisplayName":"Topic for foreign accounts to publish status information to",
+                "TopicName":"ForeignAccountStatus"
+            }
+            )
+        )
+
+    cft.resources.add(
+        Resource("ForeignAccountStatusTopicPolicy",
+            "AWS::SNS::TopicPolicy",
+            {
+                "Topics":[ref("ForeignAccountStatusTopic")],
+                "PolicyDocument":{
+                    "Version" : "2012-10-17",
+                    "Id":"ForeignAccountStatusPolicy",
+                    "Statement":[
+                        {
+                            "Sid":"ForeignAccountStatusPolicyStatement",
+                            "Effect":"Allow",
+                            "Principal": {
+                                "AWS": find_in_map("VariableMap","CloudTrailLogPublishers","AccountRootARNs")
+                            },
+                            "Action":"SNS:Publish",
+                            "Resource": "*"
+                        }
+                     ]
+                }
+            }
+            )
+        )
+
+
 
     # Create SNS Topics for each AWS account and grant those accounts rights
     # to publish and subscribe to those topics     
