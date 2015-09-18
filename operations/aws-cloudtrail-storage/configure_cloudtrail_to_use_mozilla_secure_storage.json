@@ -114,7 +114,6 @@
                     ]
                 },
                 "InstanceType":"m3.medium",
-                "KeyName":"gene-keys",
                 "SecurityGroupIds":[{
                     "Ref":"SecurityGroup"
                 }],
