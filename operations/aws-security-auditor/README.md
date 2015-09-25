@@ -35,7 +35,7 @@ This method is preferred over using boto.
 
 ## Create a Trusting Account using boto
 
-This is not the preferred method to grant these rights. The cloudformation template described later
+This is not the preferred method to grant these rights. The cloudformation template described above
 is preferred.
 
 ```
