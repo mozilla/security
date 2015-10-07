@@ -1,0 +1,92 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"MozDef SQS Queue",
+  "Resources":{
+    "TestSQSPublisher":{
+      "Type":"AWS::IAM::User",
+      "Properties":{
+        "Policies":[
+          {
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["sqs:SendMessage",
+                             "sqs:ChangeMessageVisibility"],
+                  "Resource": "arn:aws:sqs:us-west-1:656532927350:nubis_events_non_prod"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "sqs:GetQueueUrl",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName" : "TestSQSPublisher"
+          }
+        ]
+      }
+    },
+    "TestUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+         "Serial": 1,
+         "Status": "Active",
+         "UserName": {"Ref": "TestSQSPublisher"}
+      }
+    },
+    "ProdUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+         "Serial": 1,
+         "Status": "Active",
+         "UserName": {"Ref": "ProdSQSPublisher"}
+      }
+    },
+    "ProdSQSPublisher":{
+      "Type":"AWS::IAM::User",
+      "Properties":{
+        "Policies":[
+          {
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["sqs:SendMessage",
+                             "sqs:ChangeMessageVisibility"],
+                  "Resource": "arn:aws:sqs:us-west-1:656532927350:nubis_events_prod"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "sqs:GetQueueUrl",
+                  "Resource": "*"
+                }
+              ]
+            },
+            "PolicyName" : "ProdSQSPublisher"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs" : {
+    "TestAccessKeyId" : {
+      "Description" : "Information about the value",
+      "Value" : {"Ref": "TestUserAccessKey"}
+    },
+    "TestSecretAccessKey" : {
+      "Description" : "Information about the value",
+      "Value" : {"Fn::GetAtt": ["TestUserAccessKey", "SecretAccessKey"]}
+    },
+    "ProdAccessKeyId" : {
+      "Description" : "Information about the value",
+      "Value" : {"Ref": "ProdUserAccessKey"}
+    },
+    "ProdSecretAccessKey" : {
+      "Description" : "Information about the value",
+      "Value" : {"Fn::GetAtt": ["ProdUserAccessKey", "SecretAccessKey"]}
+    }
+  }
+}
