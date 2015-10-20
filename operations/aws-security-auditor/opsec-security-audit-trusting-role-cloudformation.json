@@ -12,7 +12,7 @@
               "Sid":"",
               "Effect":"Allow",
               "Principal":{
-                "AWS":"arn:aws:iam::656532927350:role/OpSecTrustedAuditor"
+                "AWS":"arn:aws:iam::656532927350:root"
               },
               "Action":"sts:AssumeRole"
             }
