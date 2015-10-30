@@ -1,6 +1,0 @@
----
-ipquery::flask_secret_key: "%{::credstash_moz_opsec_ipquery_prod_django_secret_key}"
-ipquery::ip2instance_roles: "%{::credstash_moz_opsec_ipquery_prod_roles}"
-ipquery::saml_url: "%{::credstash_moz_opsec_ipquery_prod_saml_url}"
-ipquery::tls_certificate: "%{::credstash_moz_opsec_ipquery_prod_tlscert}"
-ipquery::tls_certificate_key: "%{::credstash_moz_opsec_ipquery_prod_tlscertkey}"
