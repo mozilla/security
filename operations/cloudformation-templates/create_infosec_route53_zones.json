@@ -1,0 +1,18 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Create Infosec Zones",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Resources":{
+    "SecurityMozillaOrg":{
+      "Type":"AWS::Route53::HostedZone",
+
+          "Properties" : {
+            "HostedZoneConfig" : { "Comment" : "Enterprise Information Security - Prod" },
+            "Name" : "security.mozilla.org."
+          }
+
+    }
+  }
+}

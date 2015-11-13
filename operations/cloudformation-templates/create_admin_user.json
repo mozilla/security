@@ -1,0 +1,40 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Create IAM Admin User",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Parameters":{
+    "TemporaryPassword":{
+      "Description":"IAM User Temporary Password",
+      "Type":"String",
+      "NoEcho":true
+    }
+  },
+  "Resources":{
+    "User":{
+      "Type":"AWS::IAM::User",
+      "Properties":{
+        "Path":"/",
+        "LoginProfile":{
+          "Password":{"Ref":"TemporaryPassword"},
+          "PasswordResetRequired": true
+        },
+        "Groups": [{"Ref":"Group"}]
+      }
+    },
+    "Group":{
+      "Type":"AWS::IAM::Group",
+      "Properties":{
+        "Path":"/",
+        "ManagedPolicyArns":["arn:aws:iam::aws:policy/AdministratorAccess"]
+      }
+    }
+  },
+  "Outputs":{
+    "UserName":{
+      "Description":"The IAM User Name",
+      "Value":{"Ref":"User"}
+    }
+  }
+}
