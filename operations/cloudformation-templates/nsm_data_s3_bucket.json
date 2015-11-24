@@ -1,0 +1,54 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Create nsm-data S3 Bucket",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Resources":{
+    "NsmData":{
+      "Type":"AWS::S3::Bucket",
+      "Properties":{
+        "BucketName":"nsm-data"
+      }
+    },
+    "NsmDataBucketPolicy":{
+      "Type":"AWS::S3::BucketPolicy",
+      "DeletionPolicy" : "Retain",
+      "Properties":{
+        "Bucket":{
+          "Ref":"NsmData"
+        },
+        "PolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Sid":"",
+              "Effect":"Allow",
+              "Principal":{
+                "AWS":"arn:aws:iam::656532927350:root"
+              },
+              "Action":[
+                "s3:GetBucketLocation",
+                "s3:ListBucket"
+              ],
+              "Resource":{
+                "Fn::Join" : [ "", [ "arn:aws:s3:::", {"Ref":"NsmData"} ] ]
+              }
+            },
+            {
+              "Sid":"",
+              "Effect":"Allow",
+              "Principal":{
+                "AWS":"arn:aws:iam::656532927350:root"
+              },
+              "Action":"s3:GetObject",
+              "Resource":{
+                "Fn::Join" : [ "", [ "arn:aws:s3:::", {"Ref":"NsmData"}, "/*" ] ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
