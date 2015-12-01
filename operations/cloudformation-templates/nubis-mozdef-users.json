@@ -1,0 +1,137 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"MozDef SQS Queue",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Resources":{
+    "StagingSQSPublisherPolicy": {
+       "Type": "AWS::IAM::Policy",
+       "Properties": {
+          "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["sqs:SendMessage",
+                             "sqs:ChangeMessageVisibility"],
+                  "Resource": "arn:aws:sqs:us-west-1:656532927350:nubis_events_non_prod"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "sqs:GetQueueUrl",
+                  "Resource": "*"
+                }
+              ]
+            },
+          "PolicyName" : "StagingSQSPublisher",
+          "Users" : [
+            {"Ref": "StagingFluentdSQSPublisher"}
+          ]
+       }
+    },
+    "ProdSQSPublisherPolicy": {
+       "Type": "AWS::IAM::Policy",
+       "Properties": {
+          "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["sqs:SendMessage",
+                             "sqs:ChangeMessageVisibility"],
+                  "Resource": "arn:aws:sqs:us-west-1:656532927350:nubis_events_prod"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "sqs:GetQueueUrl",
+                  "Resource": "*"
+                }
+              ]
+            },
+          "PolicyName" : "ProdSQSPublisher",
+          "Users" : [
+            {"Ref": "ProdFluentdSQSPublisher"}
+          ]
+       }
+    },
+    "StagingFluentdSQSPublisher":{
+      "Type":"AWS::IAM::User"
+    },
+    "StagingFluentdUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+         "Serial": 1,
+         "Status": "Active",
+         "UserName": {"Ref": "StagingFluentdSQSPublisher"}
+      }
+    },
+    "ProdFluentdSQSPublisher":{
+      "Type":"AWS::IAM::User"
+    },
+    "ProdFluentdUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+         "Serial": 1,
+         "Status": "Active",
+         "UserName": {"Ref": "ProdFluentdSQSPublisher"}
+      }
+    },
+    "StagingNSMSQSPublisher":{
+      "Type":"AWS::IAM::User"
+    },
+    "StagingNSMUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+         "Serial": 1,
+         "Status": "Active",
+         "UserName": {"Ref": "StagingNSMSQSPublisher"}
+      }
+    },
+    "ProdNSMSQSPublisher":{
+      "Type":"AWS::IAM::User"
+    },
+    "ProdNSMUserAccessKey": {
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+         "Serial": 1,
+         "Status": "Active",
+         "UserName": {"Ref": "ProdNSMSQSPublisher"}
+      }
+    }
+  },
+  "Outputs" : {
+    "StagingFluentdAccessKeyId" : {
+      "Description" : "Access Key for Staging Fluentd",
+      "Value" : {"Ref": "StagingFluentdUserAccessKey"}
+    },
+    "StagingFluentdSecretAccessKey" : {
+      "Description" : "Secret Key for Staging Fluentd",
+      "Value" : {"Fn::GetAtt": ["StagingFluentdUserAccessKey", "SecretAccessKey"]}
+    },
+    "ProdFluentdAccessKeyId" : {
+      "Description" : "Access Key for Prod Fluentd",
+      "Value" : {"Ref": "ProdFluentdUserAccessKey"}
+    },
+    "ProdFluentdSecretAccessKey" : {
+      "Description" : "Secret Key for Prod Fluentd",
+      "Value" : {"Fn::GetAtt": ["ProdFluentdUserAccessKey", "SecretAccessKey"]}
+    },
+    "StagingNSMAccessKeyId" : {
+      "Description" : "Access Key for Staging NSM",
+      "Value" : {"Ref": "StagingNSMUserAccessKey"}
+    },
+    "StagingNSMSecretAccessKey" : {
+      "Description" : "Secret Key for Staging NSM",
+      "Value" : {"Fn::GetAtt": ["StagingNSMUserAccessKey", "SecretAccessKey"]}
+    },
+    "ProdNSMAccessKeyId" : {
+      "Description" : "Access Key for Prod NSM",
+      "Value" : {"Ref": "ProdNSMUserAccessKey"}
+    },
+    "ProdNSMSecretAccessKey" : {
+      "Description" : "Secret Key for Prod NSM",
+      "Value" : {"Fn::GetAtt": ["ProdNSMUserAccessKey", "SecretAccessKey"]}
+    }
+  }
+}
