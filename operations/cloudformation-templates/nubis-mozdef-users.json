@@ -26,7 +26,8 @@
             },
           "PolicyName" : "StagingSQSPublisher",
           "Users" : [
-            {"Ref": "StagingFluentdSQSPublisher"}
+            {"Ref": "StagingFluentdSQSPublisher"},
+            {"Ref": "StagingNSMSQSPublisher"}
           ]
        }
     },
@@ -51,7 +52,8 @@
             },
           "PolicyName" : "ProdSQSPublisher",
           "Users" : [
-            {"Ref": "ProdFluentdSQSPublisher"}
+            {"Ref": "ProdFluentdSQSPublisher"},
+            {"Ref": "ProdNSMSQSPublisher"}
           ]
        }
     },
