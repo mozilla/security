@@ -1,6 +1,9 @@
 {
   "AWSTemplateFormatVersion":"2010-09-09",
   "Description":"Deploy CloudTrail configurations in all regions using lambda",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/aws-cloudtrail-storage"
+  },
   "Resources":{
     "CloudTrailInfo":{
       "Type":"Custom::CloudTrailInfo",

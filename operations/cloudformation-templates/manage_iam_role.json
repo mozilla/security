@@ -1,6 +1,9 @@
 {
   "AWSTemplateFormatVersion":"2010-09-09",
   "Description":"Create IAM role",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
   "Parameters":{
     "RoleName":{
       "Description":"IAM Role Name",
