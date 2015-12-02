@@ -1,0 +1,180 @@
+{
+    "AWSTemplateFormatVersion":"2010-09-09",
+    "Description":"Temporary stack to create a worker instance which will deploy CloudTrail configurations in all regions",
+    "Mappings":{
+        "RegionMap":{
+            "us-east-1":{
+                "Centos7x8664withUpdatesHVM":"ami-96a818fe"
+            },
+            "us-west-2":{
+                "Centos7x8664withUpdatesHVM":"ami-c7d092f7"
+            },
+            "us-west-1":{
+                "Centos7x8664withUpdatesHVM":"ami-6bcfc42e"
+            },
+            "eu-central-1":{
+                "Centos7x8664withUpdatesHVM":"ami-7cc4f661"
+            },
+            "eu-west-1":{
+                "Centos7x8664withUpdatesHVM":"ami-e4ff5c93"
+            },
+            "ap-southeast-1":{
+                "Centos7x8664withUpdatesHVM":"ami-aea582fc"
+            },
+            "ap-southeast-2":{
+                "Centos7x8664withUpdatesHVM":"ami-bd523087"
+            },
+            "ap-northeast-1":{
+                "Centos7x8664withUpdatesHVM":"ami-89634988"
+            },
+            "sa-east-1":{
+                "Centos7x8664withUpdatesHVM":"ami-bf9520a2"
+            }
+        }
+    },
+    "Resources":{
+        "IAMRole":{
+            "Type":"AWS::IAM::Role",
+            "Properties":{
+                "AssumeRolePolicyDocument":{
+                    "Version":"2012-10-17",
+                    "Statement":[
+                        {
+                            "Effect":"Allow",
+                            "Principal":{
+                                "Service":[
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action":[
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies":[
+                    {
+                        "PolicyName":"root",
+                        "PolicyDocument":{
+                            "Version":"2012-10-17",
+                            "Statement":[
+                                {
+                                    "Effect":"Allow",
+                                    "Action":"*",
+                                    "Resource":"*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "InstanceProfile":{
+            "Type":"AWS::IAM::InstanceProfile",
+            "Properties":{
+                "Roles":[
+                    {
+                        "Ref":"IAMRole"
+                    }
+                ]
+            }
+        },
+        "SecurityGroup":{
+            "Type":"AWS::EC2::SecurityGroup",
+            "Properties":{
+                "GroupDescription":"Temporary CloudTrail configuration Security Group",
+                "SecurityGroupIngress":[
+                    {
+                        "IpProtocol":"tcp",
+                        "FromPort" : "22",
+                        "ToPort" : "22",
+                        "CidrIp":"0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "Ec2Instance":{
+            "Type":"AWS::EC2::Instance",
+            "Metadata":{
+                "UserDataComment1":"The cloud-config script is delivered directly in user_data because the CentOS 7 base AMIs run cloud-init automatically, looking for a cloud-init config in user_data",
+                "UserDataComment2":"In this example the 'dmidecode' command is run and the output is sent back to the WaitConditionHandle which is then passed out through the CloudFormation outputs",
+                "ImageIdComment":"The AMIs in the RegionMap are AMIs published by Centos.org. They can be found here : https://aws.amazon.com/marketplace/pp/B00O7WM7QW"
+            },
+            "Properties":{
+                "IamInstanceProfile":{
+                    "Ref":"InstanceProfile"
+                },
+                "ImageId":{
+                    "Fn::FindInMap":[
+                        "RegionMap",
+                        {
+                            "Ref":"AWS::Region"
+                        },
+                        "Centos7x8664withUpdatesHVM"
+                    ]
+                },
+                "InstanceType":"m3.medium",
+                "SecurityGroupIds":[{
+                    "Ref":"SecurityGroup"
+                }],
+                "Tags":[
+                    {
+                        "Key":"Name",
+                        "Value":"Temporary CloudTrail Config Builder"
+                    }
+                ],
+                "UserData":{
+                    "Fn::Base64":{
+                        "Fn::Join":[
+                            "",
+                            [
+                                "#cloud-config\n",
+                                "\n",
+                                "runcmd:\n",
+                                " - yum --assumeyes install epel-release\n",
+                                " - yum --assumeyes install python-pip git\n",
+                                " - for i in {1..3}; do pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz 2>&1 >> /var/log/initial_user-data.log && break || sleep 10; done\n",
+                                " - for i in {1..3}; do pip install -e 'git+https://github.com/mozilla/security.git#egg=deploy_cloudtrail_cloudformations&subdirectory=operations/aws-cloudtrail-storage/deploy_cloudtrail_cloudformations' 2>&1 >> /var/log/initial_user-data.log && break || sleep 10; done\n",
+                                " - deploy_cloudtrail_cloudformations mozilla-cloudtrail-logs 2>&1 >> /tmp/custom-output.txt\n",
+                                " - CFNSTATUS=$?\n",
+                                " - /usr/bin/cfn-signal ",
+                                "         --exit-code $CFNSTATUS ",
+                                "         --data \"$( base64 -w 0 /tmp/custom-output.txt )\" ",
+                                "'",
+                                {
+                                    "Ref":"WaitConditionHandle"
+                                },
+                                "'",
+                                " 2>&1 >> /var/log/initial_user-data.log\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "WaitConditionHandle":{
+            "Type":"AWS::CloudFormation::WaitConditionHandle"
+        },
+        "WaitCondition":{
+            "Type":"AWS::CloudFormation::WaitCondition",
+            "DependsOn":"Ec2Instance",
+            "Properties":{
+                "Handle":{
+                    "Ref":"WaitConditionHandle"
+                },
+                "Timeout":"300"
+            }
+        }
+    },
+    "Outputs":{
+        "CloudInitOutput":{
+            "Description":"The data returned to the WaitConditionHandle from Cloud Init",
+            "Value":{
+                "Fn::GetAtt":[
+                    "WaitCondition",
+                    "Data"
+                ]
+            }
+        }
+    }
+}

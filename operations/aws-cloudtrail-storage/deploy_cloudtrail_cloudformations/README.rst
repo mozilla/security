@@ -3,6 +3,16 @@ Overview
 
 Configure CloudTrail in all AWS regions by deploying CloudFormation templates.
 
+Installation
+============
+
+You can install this from github with this pip command.
+
+::
+
+    pip install -e 'git+https://github.com/mozilla/security.git#egg=deploy_cloudtrail_cloudformations&subdirectory=operations/aws-cloudtrail-storage/deploy_cloudtrail_cloudformations'
+
+
 Usage
 =====
 
