@@ -1,178 +1,62 @@
 These instructions show how to both create a *trusted* IAM role (likely in 
-the moz-opsec AWS account) and a *trusting* IAM role in foreign AWS accounts. 
+the `infosec-prod` AWS account) and *trusting* IAM roles in foreign AWS accounts. 
 This will allow other Mozilla teams with AWS accounts to delegate permissions 
-to OpSec to enable OpSec to perform security audits.
+to Infosec to enable Infosec to perform security audits and incident response.
 
-The policy in the *trusting* account contains a list of permissions which come 
-from the AWS built in "Security Audit" IAM role.
+The IAM policies in the *trusting* account's roles contain a list of permissions
+which are based on the AWS built in "Security Audit" IAM role as well as
+permissions Infosec has defined for the purposes of incident response.
 
 # Trusting Account
 
 Here's how to create an IAM role for the trusting account. This would be done 
-by a foreign AWS account holder who wants to grant OpSec the ability to audit 
-the security of their AWS account.
+by a foreign AWS account holder who wants to grant Infosec the ability to audit 
+the security of their AWS account and perform incident response in the event of
+a security issue.
 
 ## Create a Trusting Account using cloudformation
 
-This method is preferred over using boto.
-
-* The foreign AWS account holder should log into their AWS web console
+* The foreign AWS account holder should log into their AWS web console in
+  in either the `us-west-2` region or the `us-east-1` region (the only regions
+  that support AWS Lambda currently)
 * Browse to the [CloudFormation section](https://console.aws.amazon.com/cloudformation/home?region=us-west-2)
 * Click the `Create Stack` button
-  * In the `Name` field enter something like `opsec-security-audit-role`
-  * In the `Source` field select `Specify an Amazon S3 template URL` and type in 
+  * In the `Name` field enter something like `InfosecClientRoles`
+  * In the `Source` field select `Specify an Amazon S3 template URL` and type
+    in 
  
-    https://s3-us-west-2.amazonaws.com/opsec-cloudformation-templates/opsec-security-audit-trusting-role-cloudformation.json
+    https://s3.amazonaws.com/infosec-cloudformation-templates/infosec-security-audit-incident-response-roles-cloudformation.json
 
 * Click the `Next` button
-* Deploy the `opsec-security-audit-trusting-role-cloudformation.json` template
+* Deploy the `infosec-security-audit-incident-response-roles-cloudformation.json`
+  template
 * On the `Options` page click the `Next` button
-* On the `Review` page click the checkbox that says `I acknowledge that this template might cause AWS CloudFormation to create IAM resources.`
+* On the `Review` page click the checkbox that says `I acknowledge that this
+  template might cause AWS CloudFormation to create IAM resources.`
 * Click the `Create` button
-* When the CloudFormation stack completes the creation process and the `Status` field changes from `CREATE_IN_PROGRESS` to `CREATE_COMPLETE`, select the new stack and click the `Outputs` tab in the bottom window pane.
-* Copy the `Value` given for the `OpSecSecurityAuditRoleARN` `Key` and paste it into the bug that OpSec opened requesting the creation of this account
-  * An example `Value` would be `arn:aws:iam::123456789012:role/opsec-security-audit-role-OpSecSecurityAuditRole-1234567890AB`
+* When the CloudFormation stack completes the creation process and the `Status`
+  field changes from `CREATE_IN_PROGRESS` to `CREATE_COMPLETE`.
 
-## Create a Trusting Account using boto
 
-This is not the preferred method to grant these rights. The cloudformation template described above
-is preferred.
+## Trusting account alternatives
 
-```
-#!/usr/bin/env python
+If the owner of the *trusting* account would *only* like to utilize Infosec's
+security auditing service and to take on incident response in the event of a
+security breach themselves, that account owner can instead create a *trusting*
+role which only delegates permissions to Infosec related to security auditing.
 
-# Set this to the ARN of the trusted account role
-trusted_account_role_arn="arn:aws:iam::656532927350:role/OpSecTrustedAuditor"
+To do so, load this CloudFormation template instead
 
-import boto.iam
-conn_iam = boto.iam.connect_to_region('universal')
-role_name='OpSecSeucrityAudit'
-instance_profile_name='OpSecSeucrityAuditInstanceProfile'
-assume_role_policy_document = '''{
-  "Version":"2012-10-17",
-  "Statement":[
-    {
-      "Sid":"",
-      "Effect":"Allow",
-      "Principal":{
-        "AWS":"%s"
-      },
-      "Action":"sts:AssumeRole"
-    }
-  ]
-}''' % trusted_account_role_arn
-policy_name = "SecurityAudit"
-policy_document = '''{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "autoscaling:Describe*",
-        "cloudformation:DescribeStack*",
-        "cloudformation:GetTemplate",
-        "cloudformation:ListStack*",
-        "cloudfront:Get*",
-        "cloudfront:List*",
-        "cloudwatch:Describe*",
-        "directconnect:Describe*",
-        "dynamodb:ListTables",
-        "ec2:Describe*",
-        "elasticbeanstalk:Describe*",
-        "elasticache:Describe*",
-        "elasticloadbalancing:Describe*",
-        "elasticmapreduce:DescribeJobFlows",
-        "glacier:ListVaults",
-        "iam:Get*",
-        "iam:List*",
-        "rds:Describe*",
-        "rds:DownloadDBLogFilePortion",
-        "rds:ListTagsForResource",
-        "redshift:Describe*",
-        "route53:GetHostedZone",
-        "route53:ListHostedZones",
-        "route53:ListResourceRecordSets",
-        "s3:GetBucket*",
-        "s3:GetLifecycleConfiguration",
-        "s3:GetObjectAcl",
-        "s3:GetObjectVersionAcl",
-        "s3:ListAllMyBuckets",
-        "sdb:DomainMetadata",
-        "sdb:ListDomains",
-        "sns:GetTopicAttributes",
-        "sns:ListTopics",
-        "sqs:GetQueueAttributes",
-        "sqs:ListQueues"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-    }
-  ]
-}'''
-
-print(conn_iam.create_role(role_name=role_name,
-      assume_role_policy_document=assume_role_policy_document))
-
-print(conn_iam.put_role_policy(role_name=role_name,
-      policy_name=policy_name,
-      policy_document=policy_document))
-print(conn_iam.create_instance_profile(instance_profile_name))
-print(conn_iam.add_role_to_instance_profile(instance_profile_name,
-                                            role_name))
-
-```
+https://s3.amazonaws.com/infosec-cloudformation-templates/infosec-security-audit-trusting-role-cloudformation.json
 
 # Trusted account
 
-This IAM role is created in an OpSec controlled AWS account (likely the 
-moz-opsec account) and is the role which the *trusting* accounts delegate
-permissions to.
+Since the *trusting* accounts delegate permissions not to a specific IAM Role
+within the `infosec-prod` AWS account, but instead to the entire `infosec-prod`
+AWS account, any user or IAM Role in the `infosec-prod` account which is granted
+permissions within the `infosec-prod` account to assume the role of the 
+*trusting* account's IAM Role can do so.
 
-Note, since the trusted account must have a predictable ARN to be referenced
-by the *trusting* accounts it can not be created with cloudformation.
-
-```
-import boto.iam
-conn_iam = boto.iam.connect_to_region('universal')
-role_name='OpSecTrustedAuditor'
-instance_profile_name='OpSecTrustedAuditorInstanceProfile'
-assume_role_policy_document = '''{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "ec2.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-}'''
-policy_name = 'OpSecTrustedAuditorPerms'
-policy_document = '''{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Resource": "*"
-    }
-  ]
-}'''
-
-print(conn_iam.create_role(role_name=role_name,
-                           assume_role_policy_document=assume_role_policy_document))
-print(conn_iam.put_role_policy(role_name=role_name,
-                               policy_name=policy_name,
-                               policy_document=policy_document))
-print(conn_iam.create_instance_profile(instance_profile_name))
-print(conn_iam.add_role_to_instance_profile(instance_profile_name,
-                                            role_name))
-```
-
-## Trusted account instance
-
-To create an ec2 instance that has the trusted account IAM role, launch the
-`opsec-security-auditor-cloudformation.json` cloudformation template in the
-OpSec controlled AWS account in which the `OpSecTrustedAuditor` IAM role and
-`OpSecTrustedAuditorInstanceProfile` instance profile were created in.
+The reason that we request the *trusting* accounts delegate permissions to the
+`infosec-prod` account and not a specific IAM role is due to a limitation in
+AWS related to multiple IAM Roles chained role assumption.
