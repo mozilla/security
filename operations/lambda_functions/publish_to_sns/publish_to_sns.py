@@ -23,6 +23,12 @@ def publish_to_sns(event, context):
             raise ValueError('%s argument not present in ResourceProperties'
                              % required_property)
 
+    if len(event['ResourceProperties']['TopicArn'].split(':')) < 6:
+        raise ValueError(
+            'TopicArn argument of %s is not a well formed ARN in the format '
+            'of arn:partition:service:region:account-id:resource' %
+            event['ResourceProperties']['TopicArn'])
+
     arguments = {x: event['ResourceProperties'][x]
                  for x
                  in event['ResourceProperties'].keys()
@@ -31,7 +37,8 @@ def publish_to_sns(event, context):
     if type(arguments['Message']) == dict:
         arguments['MessageStructure'] = 'json'
 
-    client = boto3.client('sns')
+    region_name = event['ResourceProperties']['TopicArn'].split(':')[3]
+    client = boto3.client('sns', region_name=region_name)
     if event['RequestType'] != 'Delete':
         result = client.publish(**arguments)['MessageId']
     else:
