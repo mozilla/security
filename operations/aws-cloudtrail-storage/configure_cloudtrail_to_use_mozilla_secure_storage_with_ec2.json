@@ -4,31 +4,31 @@
     "Mappings":{
         "RegionMap":{
             "us-east-1":{
-                "Centos7x8664withUpdatesHVM":"ami-96a818fe"
+                "CentOS7x8664withUpdatesHVM":"ami-61bbf104"
             },
             "us-west-2":{
-                "Centos7x8664withUpdatesHVM":"ami-c7d092f7"
+                "CentOS7x8664withUpdatesHVM":"ami-d440a6e7"
             },
             "us-west-1":{
-                "Centos7x8664withUpdatesHVM":"ami-6bcfc42e"
+                "CentOS7x8664withUpdatesHVM":"ami-f77fbeb3"
             },
             "eu-central-1":{
-                "Centos7x8664withUpdatesHVM":"ami-7cc4f661"
+                "CentOS7x8664withUpdatesHVM":"ami-e68f82fb"
             },
             "eu-west-1":{
-                "Centos7x8664withUpdatesHVM":"ami-e4ff5c93"
+                "CentOS7x8664withUpdatesHVM":"ami-33734044"
             },
             "ap-southeast-1":{
-                "Centos7x8664withUpdatesHVM":"ami-aea582fc"
+                "CentOS7x8664withUpdatesHVM":"ami-2a7b6b78"
             },
             "ap-southeast-2":{
-                "Centos7x8664withUpdatesHVM":"ami-bd523087"
+                "CentOS7x8664withUpdatesHVM":"ami-d38dc6e9"
             },
             "ap-northeast-1":{
-                "Centos7x8664withUpdatesHVM":"ami-89634988"
+                "CentOS7x8664withUpdatesHVM":"ami-b80b6db8"
             },
             "sa-east-1":{
-                "Centos7x8664withUpdatesHVM":"ami-bf9520a2"
+                "CentOS7x8664withUpdatesHVM":"ami-fd0197e0"
             }
         }
     },
@@ -110,7 +110,7 @@
                         {
                             "Ref":"AWS::Region"
                         },
-                        "Centos7x8664withUpdatesHVM"
+                        "CentOS7x8664withUpdatesHVM"
                     ]
                 },
                 "InstanceType":"m3.medium",
