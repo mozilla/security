@@ -34,6 +34,34 @@ def get_account_id_from_arn(arn):
     return arn.split(":")[4]
 
 
+def get_comma_delimited_string(input_list):
+    return ', '.join(input_list)
+
+
+def get_consumer_arns(trusting_arn, config):
+    consumers = (config['CloudTrailLogConsumers']
+                 if 'CloudTrailLogConsumers' in config and
+                 isinstance(config['CloudTrailLogConsumers'], list)
+                 else [])
+
+    # The account owner should always be able to read their own logs
+    result = [trusting_arn]
+
+    for consumer in consumers:
+        if type(consumer) == str:
+            result.append(consumer)
+        elif (type(consumer) == dict
+                and 'TrustedARN' in consumer
+                and 'TrustingARNs' in consumer):
+            if ((type(consumer['TrustingARNs']) == list
+                    and trusting_arn in consumer['TrustingARNs'])
+                    or (type(consumer['TrustingARNs']) == str
+                        and trusting_arn == consumer['TrustingARNs'])):
+                result.append(consumer['TrustedARN'])
+
+    return result
+
+
 def build_template(args):
     """
     Build a CloudFormation template allowing for secure CloudTrail log
@@ -52,6 +80,26 @@ def build_template(args):
     As a consequence we *can* delegate bucket permissions to client AWS
     accounts but we *can not* delegate object permissions (the log files
     themselves) to client AWS accounts.
+
+    Example config :
+
+    AccountRootARNs:
+    - arn:aws:iam::012345678901:root               # Sales
+    - arn:aws:iam::123456789012:root               # HR
+    - arn:aws:iam::234567890123:root               # Marketing
+    CloudTrailLogConsumers:
+    - arn:aws:iam::345678901234:user/security_team # Security team user
+    - TrustedARN: arn:aws:iam::456789012343:root   # CloudCo Third Party
+      TrustingARNs:
+      - arn:aws:iam::012345678901:root             # Sales
+      - arn:aws:iam::234567890123:root             # Marketing
+    - TrustedARN: arn:aws:iam::567890123434:root   # Other.com Third Party
+      TrustingARNs:
+      - arn:aws:iam::123456789012:root             # HR
+    ForeignAccountStatusSubscribers:
+    - arn:aws:iam::345678901234:root               # Security Team
+
+
     """
     config = args.config
     account_root_arns = (config['AccountRootARNs']
@@ -95,7 +143,8 @@ def build_template(args):
                     "Parameters": {
                         "RoleName": "CloudTrailLogReader%s" %
                                     account_id,
-                        "TrustedEntities": account_arn
+                        "TrustedEntities":
+                            get_consumer_arns(account_arn, config)
                     },
                     "TimeoutInMinutes": "5"
                 }
