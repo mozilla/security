@@ -1,0 +1,29 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Deploy a single global CloudTrail configuration enabling all regions in the account to write to the Mozilla AWS Secure CloudTrail Storage System",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/aws-cloudtrail-storage"
+  },
+  "Resources":{
+    "CloudTrail":{
+      "Type":"AWS::CloudTrail::Trail",
+      "Properties":{
+        "S3BucketName":"mozilla-cloudtrail-logs",
+        "SnsTopicName":{
+          "Fn::Join":[
+            "",
+            [
+              "arn:aws:sns:us-west-2:088944123687:MozillaCloudTrailLogs",
+              {
+                "Ref":"AWS::AccountId"
+              }
+            ]
+          ]
+        },
+        "IsLogging":true,
+        "IncludeGlobalServiceEvents":true,
+        "IsMultiRegionTrail":true
+      }
+    }
+  }
+}
