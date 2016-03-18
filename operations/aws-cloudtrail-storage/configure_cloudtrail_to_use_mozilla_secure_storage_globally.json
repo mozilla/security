@@ -9,17 +9,7 @@
       "Type":"AWS::CloudTrail::Trail",
       "Properties":{
         "S3BucketName":"mozilla-cloudtrail-logs",
-        "SnsTopicName":{
-          "Fn::Join":[
-            "",
-            [
-              "arn:aws:sns:us-west-2:088944123687:MozillaCloudTrailLogs",
-              {
-                "Ref":"AWS::AccountId"
-              }
-            ]
-          ]
-        },
+        "SnsTopicName":"arn:aws:sns:us-west-2:088944123687:MozillaCloudTrailLogs",
         "IsLogging":true,
         "IncludeGlobalServiceEvents":true,
         "IsMultiRegionTrail":true
