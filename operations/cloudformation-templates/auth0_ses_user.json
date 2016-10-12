@@ -1,0 +1,48 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Auth0 SES SMTP IAM User",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Resources":{
+    "User":{
+      "Type":"AWS::IAM::User",
+      "Properties":{
+        "Path":"/",
+        "Policies": [
+          {
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": {
+                "Effect": "Allow",
+                "Action": [
+                  "ses:SendRawEmail",
+                  "ses:SendEmail"
+                ],
+                "Resource": "*"
+              }
+            },
+            "PolicyName" : "AllowSESSend"
+          }
+        ]
+      }
+    },
+    "AccessKey":{
+      "Type": "AWS::IAM::AccessKey",
+      "Properties": {
+        "Serial": 1,
+        "UserName": {"Ref": "User"}
+      }
+    }
+  },
+  "Outputs":{
+    "AccessKeyId":{
+      "Description":"The IAM User Access Key ID",
+      "Value":{"Ref":"AccessKey"}
+    },
+    "SecretAccessKey":{
+      "Description":"The IAM User Secret Access Key",
+      "Value":{"Fn::GetAtt":[ "AccessKey", "SecretAccessKey" ]}
+    }
+  }
+}
