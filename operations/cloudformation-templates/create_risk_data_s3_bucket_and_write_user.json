@@ -1,0 +1,102 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Create risk data S3 Bucket and write user",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Parameters":{
+    "BucketReaderUser":{
+      "Description":"ARN of the IAM entity that will read from this bucket",
+      "Type":"String"
+    }
+  },
+  "Mappings":{
+    "VariablesMap":{
+      "RiskDataBucket":{
+        "BucketName":"infosec-risk-data",
+        "WriterUserName":"infosec-risk-data-writer"
+      }
+    }
+  },
+  "Resources":{
+    "BucketWriterUser":{
+      "Type":"AWS::IAM::User",
+      "Properties":{
+        "UserName": { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "WriterUserName"] },
+        "Policies": [
+          {
+            "PolicyDocument" : {
+              "Version":"2012-10-17",
+              "Statement":[
+                {
+                  "Effect":"Allow",
+                  "Action":[
+                    "s3:ListAllMyBuckets"
+                  ],
+                  "Resource":"arn:aws:s3:::*"
+                },
+                {
+                  "Effect":"Allow",
+                  "Action":[
+                    "s3:ListBucket",
+                    "s3:GetBucketLocation"
+                  ],
+                  "Resource":{ "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] } ] ] }
+                },
+                {
+                  "Effect":"Allow",
+                  "Action":[
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource":{ "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] }, "/*" ] ] }
+                }
+              ]
+            },
+            "PolicyName" : "RiskDataBucketWritePolicy"
+          }
+        ]
+      }
+    },
+    "RiskDataBucket":{
+      "Type":"AWS::S3::Bucket",
+      "Properties":{
+        "BucketName": { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] }
+      }
+    },
+    "RiskDataBucketPolicy":{
+      "Type":"AWS::S3::BucketPolicy",
+      "Properties":{
+        "Bucket":{
+          "Ref":"RiskDataBucket"
+        },
+        "PolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Sid":"",
+              "Effect":"Allow",
+              "Principal":{"AWS": { "Fn::GetAtt" : [ "BucketWriterUser", "Arn" ] } },
+              "Action":"s3:*",
+              "Resource": { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] }, "/*" ] ] }
+            },
+            {
+              "Sid":"",
+              "Effect":"Allow",
+              "Principal":{"AWS": {"Ref": "BucketReaderUser"}},
+              "Action":"s3:Get*",
+              "Resource": { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] }, "/*" ] ] }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs":{
+    "UserName":{
+      "Description":"Command to run to create an access key for the user",
+      "Value":{ "Fn::Join" : [ "", [ "aws iam create-access-key --user-name ", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "WriterUserName"] } ] ] }
+    }
+  }
+}
