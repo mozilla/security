@@ -1,0 +1,257 @@
+{
+    "AWSTemplateFormatVersion":"2010-09-09",
+    "Description":"Risk Heat Map",
+    "Metadata":{
+        "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+    },
+    "Parameters":{
+        "Application":{
+            "Description":"The name of the application you are deploying",
+            "Type":"String"
+        },
+        "SSHKeyName":{
+            "Description":"SSH Key Name",
+            "Type":"String"
+        },
+        "Environment":{
+            "Description":"The environment in which you are deploying the service",
+            "Type":"String",
+            "Default":"production"
+        }
+    },
+    "Mappings":{
+        "VariablesMap":{
+            "RiskDataBucket":{
+                "BucketName":"infosec-risk-data"
+            }
+        },
+        "RegionMap":{
+            "us-east-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-6d1c2007"
+            },
+            "us-west-2":{
+                "CentOS7x8664withUpdatesHVM":"ami-d2c924b2"
+            },
+            "us-west-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-af4333cf"
+            },
+            "eu-central-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-9bf712f4"
+            },
+            "eu-west-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-7abd0209"
+            },
+            "ap-southeast-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-f068a193"
+            },
+            "ap-southeast-2":{
+                "CentOS7x8664withUpdatesHVM":"ami-fedafc9d"
+            },
+            "ap-northeast-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-eec1c380"
+            },
+            "ap-northeast-2":{
+                "CentOS7x8664withUpdatesHVM":"ami-c74789a9"
+            },
+            "sa-east-1":{
+                "CentOS7x8664withUpdatesHVM":"ami-26b93b4a"
+            }
+        }
+    },
+    "Resources":{
+        "SecurityGroup":{
+            "Type":"AWS::EC2::SecurityGroup",
+            "Properties":{
+                "GroupDescription":"Base Security Group",
+                "SecurityGroupIngress":[
+                    {
+                        "FromPort":"443",
+                        "IpProtocol":"tcp",
+                        "CidrIp":"0.0.0.0/0",
+                        "ToPort":"443"
+                    },
+                    {
+                        "FromPort":"22",
+                        "IpProtocol":"tcp",
+                        "CidrIp":"0.0.0.0/0",
+                        "ToPort":"22"
+                    }
+                ],
+                "Tags":[
+                    {
+                        "Key":"App",
+                        "Value":{"Ref":"Application"}
+                    },
+                    {
+                        "Key":"Type",
+                        "Value":"app_server"
+                    },
+                    {
+                        "Key":"Stack",
+                        "Value":{
+                            "Ref":"AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key":"Name",
+                        "Value":{"Ref":"Application"}
+                    }
+                ]
+            }
+        },
+        "RiskHeatMapRole":{
+            "Type":"AWS::IAM::Role",
+            "Properties":{
+                "AssumeRolePolicyDocument":{
+                    "Version":"2012-10-17",
+                    "Statement":[
+                        {
+                            "Effect":"Allow",
+                            "Principal":{
+                                "Service":[
+                                    "ec2.amazonaws.com"
+                                ]
+                            },
+                            "Action":[
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies":[
+                    {
+                        "PolicyName":"ReadRiskDataBucket",
+                        "PolicyDocument":{
+                            "Version":"2012-10-17",
+                            "Statement":[
+                                {
+                                    "Effect":"Allow",
+                                    "Action":[
+                                        "s3:ListAllMyBuckets"
+                                    ],
+                                    "Resource":"arn:aws:s3:::*"
+                                },
+                                {
+                                    "Effect":"Allow",
+                                    "Action":[
+                                        "s3:List*",
+                                        "s3:Get*"
+                                    ],
+                       				"Resource":{ "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] } ] ] }
+                                },
+                                {
+                                    "Effect":"Allow",
+                                    "Action":[
+                                        "s3:Get*"
+                                    ],
+                   					"Resource":{ "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Fn::FindInMap" : [ "VariablesMap", "RiskDataBucket", "BucketName"] }, "/*" ] ] }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "RiskHeatMapInstanceProfile": {
+           "Type": "AWS::IAM::InstanceProfile",
+           "Properties": {
+              "Roles": [ {"Ref": "RiskHeatMapRole"} ]
+           }
+        },
+        "Instance":{
+            "Type":"AWS::EC2::Instance",
+            "Metadata":{
+                "Comment":"The cloud-config script is delivered directly in user_data because the CentOS base AMIs run cloud-init automatically, looking for a cloud-init config in user_data"
+            },
+            "Properties":{
+                "ImageId":{
+                    "Fn::FindInMap":[
+                        "RegionMap",
+                        {
+                            "Ref":"AWS::Region"
+                        },
+                        "CentOS7x8664withUpdatesHVM"
+                    ]
+                },
+                "InstanceType":"t2.micro",
+                "KeyName":{
+                    "Ref":"SSHKeyName"
+                },
+                "SecurityGroups":[
+                    {
+                        "Ref":"SecurityGroup"
+                    }
+                ],
+                "Tags":[
+                    {
+                        "Key":"App",
+                        "Value":{"Ref":"Application"}
+                    },
+                    {
+                        "Key":"Type",
+                        "Value":"app_server"
+                    },
+                    {
+                        "Key":"Stack",
+                        "Value":{
+                            "Ref":"AWS::StackName"
+                        }
+                    },
+                    {
+                        "Key":"Name",
+                        "Value":{"Ref":"Application"}
+                    }
+                ],
+                "UserData":{
+                    "Fn::Base64":{
+                        "Fn::Join":[
+                            "",
+                            [
+                                "#cloud-config\n",
+                                "\n",
+                                "write_files:\n",
+                                "-   permissions: '0644'\n",
+                                "    content: |\n",
+                                "        context:\n",
+                                "        - application=",
+                                {"Ref":"Application"},
+                                "\n",
+                                "        - environment=",
+                                {
+                                    "Ref":"Environment"
+                                },
+                                "\n",
+                                "    path: /etc/puppet-credstash.yaml\n",
+                                "runcmd:\n",
+                                " - rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm\n",
+                                " - yum install -y puppet rubygems git\n",
+                                " - gem install librarian-puppet\n",
+                                " - mkdir -v -p /opt/puppet/hiera\n",
+                                " - git clone https://github.com/gene1wood/flaskoktaapp.git /opt/src\n",
+                                " - ln -v -s -f /opt/src/puppet/Puppetfile /opt/puppet/Puppetfile\n",
+                                " - ln -v -s -f /opt/src/puppet/hiera.yaml /opt/puppet/hiera.yaml\n",
+                                " - ln -v -s -f /opt/src/puppet/hiera/common.yaml /opt/puppet/hiera/common.yaml\n",
+                                " - ln -v -s -f /opt/src/puppet/hiera/",
+                                {
+                                    "Ref":"Environment"
+                                },
+                                ".yaml /opt/puppet/hiera/",
+                                {
+                                    "Ref":"Environment"
+                                },
+                                ".yaml\n",
+                                " - bash -c \"cd /opt/puppet && HOME=/root librarian-puppet install\"\n",
+                                " - echo # puppet apply --modulepath /opt/puppet/modules --execute \"include 'credstash'\"\n",
+                                " - puppet apply --modulepath /opt/puppet/modules --hiera_config /opt/puppet/hiera.yaml --environment ",
+                                {
+                                    "Ref":"Environment"
+                                },
+                                " --execute \"include 'flaskoktaapp'\"\n"
+                            ]
+                        ]
+                    }
+                }
+            }
+        }
+    }
+}
