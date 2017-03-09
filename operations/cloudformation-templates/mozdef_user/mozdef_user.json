@@ -1,0 +1,272 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Create MozDef IAM Admin User",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Parameters" : {
+    "Environment" : {
+      "Type" : "String",
+      "Default" : "QA",
+      "AllowedValues" : ["Prod", "QA"],
+      "Description" : "Enter Prod or QA"
+    }
+  },
+  "Mappings": {
+    "EnvironmentMap": {
+      "Prod": {
+        "BackupBucketName": "mozdefes2backups",
+        "BlocklistBucketName": "mozilla_infosec_blocklist",
+        "IPSpaceBucketName": "mozilla-ipspace",
+        "InfosecQueueArn": "arn:aws:sqs:us-west-1:656532927350:infosec_mozdef_events",
+        "NubisQueueArn": "arn:aws:sqs:us-west-1:656532927350:nubis_events_prod",
+        "FxaQueueArn": "arn:aws:sqs:us-west-2:361527076523:fxa-customs-prod"
+      },
+      "QA": {
+        "BackupBucketName": "mozdefes2backups",
+        "BlocklistBucketName": "mozilla_infosec_blocklist",
+        "IPSpaceBucketName": "MISSINGmozdef-gen2-privateIssue147",
+        "InfosecQueueArn": "arn:aws:sqs:us-west-1:656532927350:infosec_mozdef_events_non_prod",
+        "NubisQueueArn": "arn:aws:sqs:us-west-1:656532927350:nubis_events_non_prod",
+        "FxaQueueArn": "arn:aws:sqs:us-west-2:361527076523:fxa-customs-prod"
+      }
+    }
+  },
+  "Resources":{
+    "MozdefS3Policy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Metadata": {
+        "AllowWriteTomozdefes2backups": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/backupSnapshot.py#L116-L119",
+          "/etc/elasticsearch/mozdefes6.private.scl3.mozilla.com/elasticsearch.yml on mozdefesX.private.scl3.mozilla.com",
+          "GET /_snapshot/s3backup against a mozdef elasticsearch server to get the s3backup : settings : bucket name",
+          "https://www.elastic.co/guide/en/elasticsearch/plugins/2.4/cloud-aws-repository.html"
+        ],
+        "AllowWriteTomozilla_infosec_blocklist": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/createIPBlockList.py#L150-L169",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/createIPBlockList.sh#L12",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/createIPBlockList.conf#L7"
+        ],
+        "AllowReadFrommozilla-ipspace": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/update_ip_list.py#L20-L29",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/update_ip_list.conf#L4"
+        ]
+      },
+      "Properties": {
+        "Description" : "Policy to access mozdefes2backups, mozilla_infosec_blocklist and mozilla-ipspace",
+        "PolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "s3:ListAllMyBuckets",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation",
+                "s3:ListBucketMultipartUploads",
+                "s3:ListBucketVersions"
+              ],
+              "Resource": {"Fn::Join":["",["arn:aws:s3:::",{"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"BackupBucketName"]}]]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject*",
+                "s3:PutObject*",
+                "s3:DeleteObject",
+                "s3:AbortMultipartUpload",
+                "s3:ListMultipartUploadParts"
+              ],
+              "Resource": {"Fn::Join":["",["arn:aws:s3:::",{"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"BackupBucketName"]},"/*"]]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": "s3:ListBucket",
+              "Resource": {"Fn::Join":["",["arn:aws:s3:::",{"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"BlocklistBucketName"]}]]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject*",
+                "s3:PutObject*"
+              ],
+              "Resource": {"Fn::Join":["",["arn:aws:s3:::",{"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"BlocklistBucketName"]},"/*"]]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": "s3:ListBucket",
+              "Resource": {"Fn::Join":["",["arn:aws:s3:::",{"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"IPSpaceBucketName"]}]]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject*"
+              ],
+              "Resource": {"Fn::Join":["",["arn:aws:s3:::",{"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"IPSpaceBucketName"]},"/*"]]}
+            }
+          ]
+        }
+      }
+    },
+    "MozdefCloudTrailPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Metadata": {
+        "AllowReadCloudTrailLogs": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L170",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L178",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L285",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L317"
+        ],
+        "AllowDescribeCloudTrails": "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L254",
+        "AllowAssumeSecurityAuditRoles": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L61",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/cloudtrail2mozdef.py#L93-L96"
+        ]
+      },
+      "Properties": {
+        "Description" : "Policy to access CloudTrail and CloudTrail logs",
+        "PolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": "s3:ListBucket",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject*"
+              ],
+              "Resource": "arn:aws:s3:::*/AWSLogs/*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "cloudtrail:DescribeTrails",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "sts:GetSessionToken",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Resource": "arn:aws:iam::*:role/*-InfosecSecurityAuditRole-*"
+            }
+          ]
+        }
+      }
+    },
+    "MozdefSQSPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Metadata": {
+        "AllowReadDeleteFromSQSQueues": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/mq/esworker.infosecsqs.conf#L6",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/mq/esworker.nubis.conf#L6",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/mq/esworker.sqs.py#L570",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/mq/esworker.sqs.py#L261",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/mq/esworker.sqs.py#L277",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/mq/esworker.sqs.py#L304"
+        ],
+        "AllowSQSSendTofxa-customs-prod": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/rest/plugins/fxaCustomsServer.py#L109",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/rest/plugins/fxaCustomsServer.conf#L5",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/rest/plugins/fxaCustomsServer.py#L114",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/compromisedCreds2fxa.py#L160",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/compromisedCreds2fxa.conf#L5",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/cron/compromisedCreds2fxa.py#L136"
+        ],
+        "AllowRoleAssumptionTofxa-customs-prodAccount": "https://bugzilla.mozilla.org/show_bug.cgi?id=1345194"
+      },
+      "Properties": {
+        "Description" : "Policy to access mozdef SQS queues",
+        "PolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:GetQueueUrl",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage"
+              ],
+              "Resource": [
+                {"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"InfosecQueueArn"]},
+                {"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"NubisQueueArn"]}
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "sqs:GetQueueUrl",
+                "sqs:SendMessage"
+              ],
+              "Resource": {"Fn::FindInMap":["EnvironmentMap",{"Ref":"Environment"},"FxaQueueArn"]}
+            },
+            {
+              "Effect": "Allow",
+              "Action": "sts:GetSessionToken",
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": "sts:AssumeRole",
+              "Resource": "arn:aws:iam::361527076523:role/*"
+            }
+          ]
+        }
+      }
+    },
+    "MozdefVPCBlackholingPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Metadata": {
+        "AllowVPCBlackholing": [
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/rest/plugins/vpcblackhole.py#L104",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/rest/plugins/vpcblackhole.py#L113",
+          "https://github.com/mozilla/mozdef-gen2-private/blob/f6557358d7a224197225538a5d9af0a59fb343b5/rest/plugins/vpcblackhole.py#L150-L153"
+        ]
+      },
+      "Properties": {
+        "Description" : "Policy to check and modify VPC routes",
+        "PolicyDocument" : {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeRouteTables",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:CreateRoute"
+              ],
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+    "User":{
+      "Type":"AWS::IAM::User",
+      "Properties":{
+        "UserName": "mozdef-gene-testuser",
+        "ManagedPolicyArns": [
+          {"Ref": "MozdefS3Policy"},
+          {"Ref": "MozdefCloudTrailPolicy"},
+          {"Ref": "MozdefSQSPolicy"},
+          {"Ref": "MozdefVPCBlackholingPolicy"}
+        ]
+      }
+    }
+  },
+  "Outputs":{
+    "UserName":{
+      "Description":"The IAM User Name",
+      "Value":{"Ref":"User"}
+    }
+  }
+}
