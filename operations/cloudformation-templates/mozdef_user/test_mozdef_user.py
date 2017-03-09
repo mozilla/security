@@ -150,6 +150,26 @@ class TestMozdefPolicies():
         )
         assert response['EvaluationResults'][0]['EvalDecision'] == 'implicitDeny'
 
+    def test_allowed_mig_sqs_actions(self, config):
+        response = self.client.simulate_principal_policy(
+            PolicySourceArn=config['source_arn'],
+            ActionNames=[
+                "sqs:GetQueueUrl",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage"
+              ],
+            ResourceArns=[config['MIGQueueArn']]
+        )
+        assert response['EvaluationResults'][0]['EvalDecision'] == 'allowed'
+
+    def test_denied_mig_sqs_send_message(self, config):
+        response = self.client.simulate_principal_policy(
+            PolicySourceArn=config['source_arn'],
+            ActionNames=["sqs:SendMessage"],
+            ResourceArns=[config['MIGQueueArn']]
+        )
+        assert response['EvaluationResults'][0]['EvalDecision'] == 'implicitDeny'
+
     def test_allowed_fxa_sqs_actions(self, config):
         response = self.client.simulate_principal_policy(
             PolicySourceArn=config['source_arn'],
