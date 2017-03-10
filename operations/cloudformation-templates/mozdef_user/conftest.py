@@ -18,7 +18,6 @@ def config(request):
             "NubisQueueArn": "arn:aws:sqs:us-west-1:656532927350:nubis_events_prod",
             "FxaQueueArn": "arn:aws:sqs:us-west-2:361527076523:fxa-customs-prod",
             "source_arn": "arn:aws:iam::656532927350:user/mozdef"
-            # "source_arn": "arn:aws:iam::656532927350:user/mozdef-gene-testuser"
         },
         'qa': {
             "BackupBucketName": "mozdefes2backups",

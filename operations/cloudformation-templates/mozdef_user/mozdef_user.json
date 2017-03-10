@@ -10,6 +10,10 @@
       "Default" : "QA",
       "AllowedValues" : ["Prod", "QA"],
       "Description" : "Enter Prod or QA"
+    },
+    "Username" : {
+      "Type" : "String",
+      "Description" : "The mozdef user's username"
     }
   },
   "Mappings": {
@@ -26,7 +30,7 @@
       "QA": {
         "BackupBucketName": "mozdefes2backups",
         "BlocklistBucketName": "mozilla_infosec_blocklist",
-        "IPSpaceBucketName": "MISSINGmozdef-gen2-privateIssue147",
+        "IPSpaceBucketName": "mozilla-ipspace",
         "InfosecQueueArn": "arn:aws:sqs:us-west-1:656532927350:infosec_mozdef_events_non_prod",
         "MIGQueueArn": "arn:aws:sqs:us-west-2:656532927350:mig-log-sqs",
         "NubisQueueArn": "arn:aws:sqs:us-west-1:656532927350:nubis_events_non_prod",
@@ -258,7 +262,8 @@
     "User":{
       "Type":"AWS::IAM::User",
       "Properties":{
-        "UserName": "mozdef-gene-testuser",
+        "UserName": {"Ref":"Username"},
+        "Path": "/mozdef/",
         "ManagedPolicyArns": [
           {"Ref": "MozdefS3Policy"},
           {"Ref": "MozdefCloudTrailPolicy"},
