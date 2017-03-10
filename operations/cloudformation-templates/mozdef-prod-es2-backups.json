@@ -1,0 +1,54 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Create Mozdef Production ES2 backup S3 bucket in us-west-2",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Conditions" : {
+    "NotInUsWest2" : {"Fn::Not":[{"Fn::Equals":[{"Ref":"AWS::Region"},"us-west-2"]}]}
+  },
+  "Resources": {
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "BucketName": "mozdef-prod-es2-backups",
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "standard2Glacierat90deleteat385",
+              "Prefix": "",
+              "Status": "Enabled",
+              "ExpirationInDays": "385",
+              "Transitions": [
+                {
+                  "TransitionInDays": 30,
+                  "StorageClass": "STANDARD_IA"
+                },
+                {
+                  "TransitionInDays": 90,
+                  "StorageClass": "GLACIER"
+                }
+              ]
+            }
+          ]
+        },
+        "LoggingConfiguration": {
+          "LogFilePrefix": "logs/"
+        }
+      }
+    },
+    "WaitConditionHandle": {
+      "Type" : "AWS::CloudFormation::WaitConditionHandle",
+      "Properties" : {}
+    },
+    "FailDueToWrongRegion": {
+      "Type" : "AWS::CloudFormation::WaitCondition",
+      "Condition" : "NotInUsWest2",
+      "Properties" : {
+        "Handle" : {"Ref": "WaitConditionHandle"},
+        "Timeout" : "1"
+      }
+    }
+  }
+}
