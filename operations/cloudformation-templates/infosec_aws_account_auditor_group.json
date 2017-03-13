@@ -1,0 +1,40 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"AWS CloudFormation template to create a group with rights to assume the designated security audit roles in other accounts",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates",
+    "Documentation":"https://mana.mozilla.org/wiki/display/SECURITY/AWS+Security+Auditing+and+Incident+Response+Services"
+  },
+  "Resources":{
+    "InfosecSecurityAuditRoleAssumptionPolicy": {
+      "Metadata": {
+        "Notes1": "This policy grants users rights to assume the designated security audit roles in other accounts."
+      },
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description" : "Policy which grants users rights to assume security audit roles.",
+        "PolicyDocument" : {
+          "Version":"2012-10-17",
+          "Statement" : [{
+            "Effect" : "Allow",
+            "Action" : "sts:AssumeRole",
+            "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
+            "Resource" : "arn:aws:iam::*:role/*-InfosecSecurityAuditRole-*"
+          }]
+        }
+      }
+    },
+    "SecurityAuditorUserGroup": {
+      "Metadata": {
+        "Notes1": "This group grants members rights to assume InfosecSecurityAuditRole roles in other AWS accounts"
+      },
+      "Type": "AWS::IAM::Group",
+      "Properties": {
+        "GroupName": "SecurityAuditorUserGroup",
+        "ManagedPolicyArns": [
+          {"Ref": "InfosecSecurityAuditRoleAssumptionPolicy"}
+        ]
+      }
+    }
+  }
+}
