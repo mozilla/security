@@ -24,6 +24,7 @@ class TestMozdefPolicies():
             ActionNames=['s3:ListBucket'],
             ResourceArns=[
                 'arn:aws:s3:::%s' % config['BackupBucketName'],
+                'arn:aws:s3:::%s' % config['NewProdBackupBucketName'],
                 'arn:aws:s3:::%s' % config['BlocklistBucketName'],
                 'arn:aws:s3:::%s' % config['IPSpaceBucketName'],
             ]
@@ -38,6 +39,35 @@ class TestMozdefPolicies():
             ResourceArns=['arn:aws:s3:::%s/example_file.txt' % config['BackupBucketName'],]
         )
         assert response['EvaluationResults'][0]['EvalDecision'] == 'allowed'
+
+    def test_allowed_write_to_new_prod_backup_bucket(self, config):
+        response = self.client.simulate_principal_policy(
+            PolicySourceArn=config['source_arn'],
+            ActionNames=['s3:PutObject', 's3:DeleteObject'],
+            ResourceArns=['arn:aws:s3:::%s/example_file.txt' % config['NewProdBackupBucketName'],]
+        )
+        assert response['EvaluationResults'][0]['EvalDecision'] == 'allowed'
+
+
+    def test_denied_write_to_other_environments_backup_bucket(self, config):
+        environment_index = config['environment_name_list'].index(
+            config['environment_name'])
+        other_environment_index = (
+            environment_index + 1
+            if environment_index < (len(config['environment_name_list']) - 1)
+            else 0
+        )
+        other_environment_name = config['environment_name_list'][
+            other_environment_index]
+        other_config = config['all_environments'][other_environment_name]
+        response = self.client.simulate_principal_policy(
+            PolicySourceArn=config['source_arn'],
+            ActionNames=['s3:PutObject', 's3:DeleteObject'],
+            ResourceArns=[
+                'arn:aws:s3:::%s/example_file.txt' %
+                other_config['NewProdBackupBucketName']]
+        )
+        assert response['EvaluationResults'][0]['EvalDecision'] == 'implicitDeny'
 
     def test_allowed_write_to_mozilla_infosec_blocklist(self, config):
         response = self.client.simulate_principal_policy(
