@@ -1,0 +1,40 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"AWS CloudFormation template to create the group granting it's members to read CloudTrail logs from the global secure CloudTrail storage account",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates",
+    "Documentation":"https://mana.mozilla.org/wiki/display/SECURITY/AWS+Secure+CloudTrail+Storage+System"
+  },
+  "Resources":{
+    "CloudTrailReaderRoleAssumptionPolicy": {
+      "Metadata": {
+        "Notes1": "This policy grants users rights to assume the CloudTrail reader role."
+      },
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description" : "Policy which grants users rights to the CloudTrail reader role",
+        "PolicyDocument" : {
+          "Version":"2012-10-17",
+          "Statement" : [{
+            "Effect" : "Allow",
+            "Action" : "sts:AssumeRole",
+            "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
+            "Resource" : "arn:aws:iam::088944123687:role/CloudTrail-Global-Log-Consumers"
+          }]
+        }
+      }
+    },
+    "SecurityAuditorUserGroup": {
+      "Metadata": {
+        "Notes1": "This group grants members rights to assume the CloudTrail-Global-Log-Consumers role"
+      },
+      "Type": "AWS::IAM::Group",
+      "Properties": {
+        "GroupName": "CloudTrailReaderUserGroup",
+        "ManagedPolicyArns": [
+          {"Ref": "CloudTrailReaderRoleAssumptionPolicy"}
+        ]
+      }
+    }
+  }
+}
