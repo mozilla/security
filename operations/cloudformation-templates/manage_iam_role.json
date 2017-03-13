@@ -13,7 +13,7 @@
       "AllowedPattern":"^[a-zA-Z][-a-zA-Z0-9]*$"
     },
     "TrustedEntities":{
-      "Description":"Trusted AWS ARNs",
+      "Description":"A comma delimited list of Trusted AWS ARNs. Each ARN is space trimmed.",
       "Type":"CommaDelimitedList"
     }
   },
@@ -84,14 +84,16 @@
                 {
                   "Effect":"Allow",
                   "Action":[
-                    "iam:CreateRole"
+                    "iam:CreateRole",
+                    "iam:UpdateAssumeRolePolicy"
                   ],
                   "Resource":"*"
                 },
                 {
                   "Effect":"Allow",
                   "Action":[
-                    "iam:DeleteRole"
+                    "iam:DeleteRole",
+                    "iam:GetRole"
                   ],
                   "Resource":{
                     "Fn::Join":[
@@ -156,6 +158,16 @@
           "Arn"
         ]
       }
+    },
+    "Result":{
+      "Description":"The result of the lambda function",
+      "Value":{
+        "Fn::GetAtt":[
+          "RoleInfo",
+          "result"
+        ]
+      }
     }
+
   }
 }
