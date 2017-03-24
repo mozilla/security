@@ -3,10 +3,6 @@
   "Description":"Credstash KMS key and DynamoDB",
   "Metadata":{
     "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates",
-    "Note1":"This template must be deployed in us-east-1 as that is the default region credstash expects the DynamoDB to be in"
-  },
-  "Conditions" : {
-    "NotInUsEast1" : {"Fn::Not":[{"Fn::Equals":[{"Ref":"AWS::Region"},"us-east-1"]}]}
   },
   "Resources":{
     "KMSKey":{
@@ -60,18 +56,6 @@
           "ReadCapacityUnits": 1,
           "WriteCapacityUnits": 1
         }
-      }
-    },
-    "WaitConditionHandle": {
-      "Type" : "AWS::CloudFormation::WaitConditionHandle",
-      "Properties" : {}
-    },
-    "FailDueToWrongRegion": {
-      "Type" : "AWS::CloudFormation::WaitCondition",
-      "Condition" : "NotInUsEast1",
-      "Properties" : {
-        "Handle" : {"Ref": "WaitConditionHandle"},
-        "Timeout" : "1"
       }
     }
   }
