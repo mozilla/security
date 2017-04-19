@@ -1,0 +1,186 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"Infosec MOC Prometheus Instance",
+  "Metadata": {
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Parameters":{
+    "KeyName":{
+      "Description":"Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type":"AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription":"Can contain only ASCII characters."
+    },
+    "SSHLocation":{
+      "Description":"The IP address range that can be used to SSH to the EC2 instances",
+      "Type":"String",
+      "MinLength":"9",
+      "MaxLength":"18",
+      "Default":"0.0.0.0/0",
+      "AllowedPattern":"(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription":"Must be a valid IP CIDR range of the form x.x.x.x/x"
+    }
+  },
+  "Mappings": {
+    "RegionMap": {
+      "ap-northeast-1": {
+        "CentOS7x8664EBSHVM": "ami-eec1c380"
+      },
+      "ap-northeast-2": {
+        "CentOS7x8664EBSHVM": "ami-c74789a9"
+      },
+      "ap-south-1": {
+        "CentOS7x8664EBSHVM": "ami-95cda6fa"
+      },
+      "ap-southeast-1": {
+        "CentOS7x8664EBSHVM": "ami-f068a193"
+      },
+      "ap-southeast-2": {
+        "CentOS7x8664EBSHVM": "ami-fedafc9d"
+      },
+      "ca-central-1": {
+        "CentOS7x8664EBSHVM": "ami-af62d0cb"
+      },
+      "eu-central-1": {
+        "CentOS7x8664EBSHVM": "ami-9bf712f4"
+      },
+      "eu-west-1": {
+        "CentOS7x8664EBSHVM": "ami-7abd0209"
+      },
+      "eu-west-2": {
+        "CentOS7x8664EBSHVM": "ami-bb373ddf"
+      },
+      "sa-east-1": {
+        "CentOS7x8664EBSHVM": "ami-26b93b4a"
+      },
+      "us-east-1": {
+        "CentOS7x8664EBSHVM": "ami-6d1c2007"
+      },
+      "us-east-2": {
+        "CentOS7x8664EBSHVM": "ami-6a2d760f"
+      },
+      "us-west-1": {
+        "CentOS7x8664EBSHVM": "ami-af4333cf"
+      },
+      "us-west-2": {
+        "CentOS7x8664EBSHVM": "ami-d2c924b2"
+      }
+    }
+  },
+  "Resources":{
+    "ServerInstance":{
+      "Type":"AWS::EC2::Instance",
+      "Properties":{
+        "Tags":[
+          {
+            "Key" : "name",
+            "Value" : "Infosec MOC Prometheus"
+          }
+        ],
+        "ImageId":{
+          "Fn::FindInMap":[
+            "RegionMap",
+            {
+              "Ref":"AWS::Region"
+            },
+            "CentOS7x8664EBSHVM"
+          ]
+        },
+        "InstanceType":"t2.medium",
+         "SecurityGroups":[
+          {
+            "Ref":"ServerSecurityGroup"
+          }
+        ],
+        "KeyName":{
+          "Ref":"KeyName"
+        },
+        "IamInstanceProfile":{
+          "Ref":"ServerInstanceProfile"
+        },
+
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sda1",
+            "Ebs": {
+              "VolumeType": "standard",
+              "DeleteOnTermination": "false",
+              "VolumeSize": "60"
+            }
+          }
+        ]
+      }
+    },
+    "ServerSecurityGroup":{
+      "Type":"AWS::EC2::SecurityGroup",
+      "Properties":{
+        "GroupDescription":"Enable HTTP/HTTPS access via port 80",
+        "Tags":[
+          {
+            "Key" : "name",
+            "Value" : "Infosec MOC Prometheus"
+          }
+        ],
+        "SecurityGroupIngress":[
+          {
+            "IpProtocol":"tcp",
+            "FromPort":"443",
+            "ToPort":"443",
+            "CidrIp":"0.0.0.0/0"
+          },
+          {
+            "IpProtocol":"tcp",
+            "FromPort":"22",
+            "ToPort":"22",
+            "CidrIp":{
+              "Ref":"SSHLocation"
+            }
+          }
+        ]
+      }
+    },
+    "ServerInstanceProfile":{
+      "Type":"AWS::IAM::InstanceProfile",
+      "Properties":{
+        "Roles":[
+          {
+            "Ref":"ServerRole"
+          }
+        ]
+      }
+    },
+    "ServerRole":{
+      "Type":"AWS::IAM::Role",
+      "Properties":{
+        "AssumeRolePolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Effect":"Allow",
+              "Principal":{
+                "Service":[
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action":[
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies":[
+        ]
+      }
+    }
+  },
+  "Outputs":{
+    "WebsiteURL":{
+      "Description":"Public DNS name for newly created instance",
+      "Value":{
+        "Fn::GetAtt":[
+          "ServerInstance",
+          "PublicDnsName"
+        ]
+      }
+    }
+  }
+}
