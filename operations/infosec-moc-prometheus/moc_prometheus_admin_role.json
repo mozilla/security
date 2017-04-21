@@ -1,0 +1,72 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"IAM Role enabling the MOC to administer their Prometheus server",
+  "Metadata": {
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Mappings":{
+    "VariablesMap":{
+      "MOC":{
+        "ExternalAccountId":"093365119719",
+        "TechnicalContact":"moc@mozilla.com"
+      }
+    }
+  },
+  "Resources":{
+    "Role":{
+      "Type":"AWS::IAM::Role",
+      "Properties":{
+        "RoleName": "MOCPrometheusAdmin",
+        "AssumeRolePolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Effect":"Allow",
+              "Action":"sts:AssumeRole",
+              "Principal":{
+                "AWS":{"Fn::Join":[":",["arn:aws:iam:",{"Fn::FindInMap":["VariablesMap","MOC","ExternalAccountId"]},"root"]]}
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName" : "ControlMOCPrometheusInstance",
+            "PolicyDocument" : {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:StopInstances",
+                    "ec2:StartInstances",
+                    "ec2:RebootInstances"
+                  ],
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals" : {
+                      "ec2:ResourceTag/TechnicalContact" : {"Fn::FindInMap":["VariablesMap","MOC","TechnicalContact"]}
+                    }
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ec2:DescribeInstances"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs":{
+    "AssumeRoleArn":{
+      "Value":{"Fn::GetAtt" : ["Role", "Arn"] },
+      "Description":"The ARN of the IAM Role"
+    }
+  }
+}

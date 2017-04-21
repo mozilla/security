@@ -72,8 +72,16 @@
       "Properties":{
         "Tags":[
           {
-            "Key" : "name",
+            "Key" : "Name",
             "Value" : "Infosec MOC Prometheus"
+          },
+          {
+            "Key" : "TechnicalContact",
+            "Value" : "moc@mozilla.com"
+          },
+          {
+            "Key" : "Environment",
+            "Value" : "prod"
           }
         ],
         "ImageId":{
