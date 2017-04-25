@@ -1,0 +1,54 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"secure-clouldtrail-new-logs SQS queue and policy",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Mappings":{
+    "VariablesMap":{
+      "Variables":{
+        "SNSTopic":"arn:aws:sns:us-west-2:088944123687:MozillaCloudTrailLogs"
+      }
+    }
+  },
+  "Resources":{
+    "Queue":{
+      "Type":"AWS::SQS::Queue",
+      "Properties":{
+        "QueueName":"secure-clouldtrail-new-log-notifications"
+      }
+    },
+    "QueuePolicy":{
+      "Type":"AWS::SQS::QueuePolicy",
+      "Properties":{
+        "PolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Sid":"AllowMozillaCloudTrailLogs",
+              "Effect":"Allow",
+              "Principal":"*",
+              "Action":"sqs:SendMessage",
+              "Resource":{"Fn::GetAtt":["Queue","Arn"]},
+              "Condition":{
+                "ArnEquals":{
+                  "aws:SourceArn":{"Fn::FindInMap":["VariablesMap","Variables","SNSTopic"]}
+                }
+              }
+            }
+          ]
+        },
+        "Queues":[{"Ref":"Queue"}]
+      }
+    },
+    "Subscription":{
+      "Type":"AWS::SNS::Subscription",
+      "DeletionPolicy" : "Retain",
+      "Properties":{
+        "Endpoint":{"Fn::GetAtt":["Queue","Arn"]},
+        "Protocol":"sqs",
+        "TopicArn":{"Fn::FindInMap":["VariablesMap","Variables","SNSTopic"]}
+      }
+    }
+  }
+}
