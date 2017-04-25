@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Id": "arn:aws:sqs:us-west-2:371522382791:mozdef-cloudtrail-sqs/SQSDefaultPolicy",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "SQS:SendMessage",
+      "Resource": "*",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn":"arn:aws:sns:us-west-2:088944123687:MozillaCloudTrailLogs"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::371522382791:user/mozdef"
+      },
+      "Action": "SQS:*",
+      "Resource": "*"
+    }
+  ]
+}
