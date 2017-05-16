@@ -20,14 +20,14 @@
       "ConstraintDescription":"Must be a valid IP CIDR range of the form x.x.x.x/x"
     },
     "HostedZoneName":{
-        "Description":"Hosted zone to create DNS record in",
+        "Description":"Hosted zone to create DNS record in, include trailing .",
         "Type":"String",
-        "Default":"security.mozilla.org"
+        "Default":"security.mozilla.org."
     },
     "FQDN":{
-        "Description":"Fully qualified domain name including hosted zone",
+        "Description":"Fully qualified domain name including hosted zone, include trailing .",
         "Type":"String",
-        "Default":"prometheus.security.mozilla.org"
+        "Default":"prometheus.security.mozilla.org."
     }
   },
   "Mappings": {
@@ -144,16 +144,17 @@
             },
             "Comment":"DNS entry for Prometheus instance",
             "Name":{
-                "Fn::Join":["", [
-                    {"Ref":"FQDN"},"."
-                ]]
+                "Ref":"FQDN"
             },
             "Type":"A",
             "TTL":"900",
             "ResourceRecords":[
                 {"Fn::GetAtt":["ServerInstance","PublicIp"]}
             ]
-        }
+        },
+        "DependsOn":[
+            "ServerInstanceEIP"
+        ]
     },
     "ServerSecurityGroup":{
       "Type":"AWS::EC2::SecurityGroup",
