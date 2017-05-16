@@ -18,6 +18,16 @@
       "Default":"0.0.0.0/0",
       "AllowedPattern":"(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
       "ConstraintDescription":"Must be a valid IP CIDR range of the form x.x.x.x/x"
+    },
+    "HostedZoneName":{
+        "Description":"Hosted zone to create DNS record in",
+        "Type":"String",
+        "Default":"security.mozilla.org"
+    },
+    "FQDN":{
+        "Description":"Fully qualified domain name including hosted zone",
+        "Type":"String",
+        "Default":"prometheus.security.mozilla.org"
     }
   },
   "Mappings": {
@@ -117,6 +127,33 @@
           }
         ]
       }
+    },
+    "ServerInstanceEIP":{
+        "Type": "AWS::EC2::EIP",
+        "Properties":{
+            "InstanceId":{
+                "Ref":"ServerInstance"
+            }
+        }
+    },
+    "ServerDNSRecord":{
+        "Type": "AWS::Route53::RecordSet",
+        "Properties":{
+            "HostedZoneName": {
+                "Ref":"HostedZoneName"
+            },
+            "Comment":"DNS entry for Prometheus instance",
+            "Name":{
+                "Fn::Join":["", [
+                    {"Ref":"FQDN"},"."
+                ]]
+            },
+            "Type":"A",
+            "TTL":"900",
+            "ResourceRecords":[
+                {"Fn::GetAtt":["ServerInstance","PublicIp"]}
+            ]
+        }
     },
     "ServerSecurityGroup":{
       "Type":"AWS::EC2::SecurityGroup",
