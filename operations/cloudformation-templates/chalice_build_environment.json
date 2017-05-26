@@ -3,7 +3,7 @@
   "Description":"AWS Chalice build environment. Creates an ec2 instance running Amazon Linux for use as a build environment for modules to be used with AWS Lambda",
   "Metadata": {
     "note1": "https://github.com/awslabs/chalice/issues/59",
-    "note2": "https://gist.github.com/gene1wood/5618430d99bc8c8c03400a71f44432ff"
+    "note2": "https://github.com/mozilla/security/tree/master/operations/tools/create_cloudformation_ami_mapping_for_amazon_linux"
   },
   "Parameters":{
     "KeyName":{
