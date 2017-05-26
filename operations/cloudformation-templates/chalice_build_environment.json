@@ -1,0 +1,246 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"AWS Chalice build environment. Creates an ec2 instance running Amazon Linux for use as a build environment for modules to be used with AWS Lambda",
+  "Metadata": {
+    "note1": "https://github.com/awslabs/chalice/issues/59",
+    "note2": "https://gist.github.com/gene1wood/5618430d99bc8c8c03400a71f44432ff"
+  },
+  "Parameters":{
+    "KeyName":{
+      "Description":"Name of an existing EC2 KeyPair to enable SSH access to the instance",
+      "Type":"AWS::EC2::KeyPair::KeyName",
+      "ConstraintDescription":"Can contain only ASCII characters."
+    },
+    "SSHLocation":{
+      "Description":"The IP address range that can be used to SSH to the EC2 instances",
+      "Type":"String",
+      "MinLength":"9",
+      "MaxLength":"18",
+      "Default":"0.0.0.0/0",
+      "AllowedPattern":"(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription":"Must be a valid IP CIDR range of the form x.x.x.x/x"
+    }
+  },
+  "Mappings": {
+    "RegionMap": {
+      "ap-northeast-1": {
+        "hvmebs": "ami-6a3b140d",
+        "hvmgp2": "ami-923d12f5",
+        "hvms3": "ami-053c1362",
+        "pvebs": "ami-30391657",
+        "pvs3": "ami-ce3c13a9"
+      },
+      "ap-northeast-2": {
+        "hvmebs": "ami-9a15c7f4",
+        "hvmgp2": "ami-9d15c7f3",
+        "hvms3": "ami-e014c68e"
+      },
+      "ap-south-1": {
+        "hvmebs": "ami-f5c6b59a",
+        "hvmgp2": "ami-52c7b43d",
+        "hvms3": "ami-83c2b1ec"
+      },
+      "ap-southeast-1": {
+        "hvmebs": "ami-b65de4d5",
+        "hvmgp2": "ami-fc5ae39f",
+        "hvms3": "ami-2b5fe648",
+        "pvebs": "ami-ab5ce5c8",
+        "pvs3": "ami-6b5fe608"
+      },
+      "ap-southeast-2": {
+        "hvmebs": "ami-762a2315",
+        "hvmgp2": "ami-162c2575",
+        "hvms3": "ami-932f26f0",
+        "pvebs": "ami-af2128cc",
+        "pvs3": "ami-752a2316"
+      },
+      "ca-central-1": {
+        "hvmebs": "ami-73d06c17",
+        "hvmgp2": "ami-0bd66a6f",
+        "hvms3": "ami-34d76b50"
+      },
+      "eu-central-1": {
+        "hvmebs": "ami-506fbd3f",
+        "hvmgp2": "ami-b968bad6",
+        "hvms3": "ami-bb68bad4",
+        "pvebs": "ami-ba68bad5",
+        "pvs3": "ami-0569bb6a"
+      },
+      "eu-west-1": {
+        "hvmebs": "ami-d3c0c4b5",
+        "hvmgp2": "ami-01ccc867",
+        "hvms3": "ami-3dc2c65b",
+        "pvebs": "ami-d1c0c4b7",
+        "pvs3": "ami-17ccc871"
+      },
+      "eu-west-2": {
+        "hvmebs": "ami-b7daced3",
+        "hvmgp2": "ami-b6daced2",
+        "hvms3": "ami-21c5d145"
+      },
+      "sa-east-1": {
+        "hvmebs": "ami-2bccae47",
+        "hvmgp2": "ami-37cfad5b",
+        "hvms3": "ami-54ccae38",
+        "pvebs": "ami-36cfad5a",
+        "pvs3": "ami-b7cfaddb"
+      },
+      "us-east-1": {
+        "hvmebs": "ami-fd8617eb",
+        "hvmgp2": "ami-c58c1dd3",
+        "hvms3": "ami-898b1a9f",
+        "pvebs": "ami-668f1e70",
+        "pvs3": "ami-30b12026"
+      },
+      "us-east-2": {
+        "hvmebs": "ami-6693b703",
+        "hvmgp2": "ami-4191b524",
+        "hvms3": "ami-4e92b62b"
+      },
+      "us-west-1": {
+        "hvmebs": "ami-f887a298",
+        "hvmgp2": "ami-7a85a01a",
+        "hvms3": "ami-1784a177",
+        "pvebs": "ami-0f85a06f",
+        "pvs3": "ami-6287a202"
+      },
+      "us-west-2": {
+        "hvmebs": "ami-3234a652",
+        "hvmgp2": "ami-4836a428",
+        "hvms3": "ami-4635a726",
+        "pvebs": "ami-c737a5a7",
+        "pvs3": "ami-3134a651"
+      }
+    }
+  },
+  "Resources":{
+    "ServerInstance":{
+      "Type":"AWS::EC2::Instance",
+      "Properties":{
+        "Tags":[
+          {
+            "Key" : "name",
+            "Value" : "chalice build environment"
+          }
+        ],
+        "ImageId":{
+          "Fn::FindInMap":[
+            "RegionMap",
+            {
+              "Ref":"AWS::Region"
+            },
+            "hvmebs"
+          ]
+        },
+        "InstanceType":"t2.micro",
+        "SecurityGroups":[
+          {
+            "Ref":"ServerSecurityGroup"
+          }
+        ],
+        "KeyName":{
+          "Ref":"KeyName"
+        },
+        "IamInstanceProfile":{
+          "Ref":"ServerInstanceProfile"
+        }
+      }
+    },
+    "ServerSecurityGroup":{
+      "Type":"AWS::EC2::SecurityGroup",
+      "Properties":{
+        "GroupDescription":"Enable HTTP/HTTPS access via port 80",
+        "Tags":[
+          {
+            "Key" : "name",
+            "Value" : "chalice build environment"
+          }
+        ],
+        "SecurityGroupIngress":[
+          {
+            "IpProtocol":"tcp",
+            "FromPort":"80",
+            "ToPort":"80",
+            "CidrIp":"0.0.0.0/0"
+          },
+          {
+            "IpProtocol":"tcp",
+            "FromPort":"443",
+            "ToPort":"443",
+            "CidrIp":"0.0.0.0/0"
+          },
+          {
+            "IpProtocol":"tcp",
+            "FromPort":"22",
+            "ToPort":"22",
+            "CidrIp":{
+              "Ref":"SSHLocation"
+            }
+          }
+        ]
+      }
+    },
+    "ServerInstanceProfile":{
+      "Type":"AWS::IAM::InstanceProfile",
+      "Properties":{
+        "Roles":[
+          {
+            "Ref":"ServerRole"
+          }
+        ]
+      }
+    },
+    "ServerRole":{
+      "Type":"AWS::IAM::Role",
+      "Properties":{
+        "AssumeRolePolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Effect":"Allow",
+              "Principal":{
+                "Service":[
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action":[
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies":[
+          {
+            "PolicyName":"Chalice",
+            "PolicyDocument":{
+              "Version":"2012-10-17",
+              "Statement":[
+                {
+                  "Effect":"Allow",
+                  "Action":[
+                    "lambda:*",
+                    "cloudwatch:*",
+                    "apigateway:*",
+                    "iam:*"
+                  ],
+                  "Resource":"*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs":{
+    "WebsiteURL":{
+      "Description":"Public DNS name for newly created instance",
+      "Value":{
+        "Fn::GetAtt":[
+          "ServerInstance",
+          "PublicDnsName"
+        ]
+      }
+    }
+  }
+}
