@@ -2,7 +2,8 @@
   "AWSTemplateFormatVersion":"2010-09-09",
   "Description":"Infosec Incident Response Role",
   "Metadata":{
-    "Source":"https://github.com/mozilla/security/tree/master/operations/aws-security-auditor"
+    "Source":"https://github.com/mozilla/security/tree/master/operations/aws-security-auditor",
+    "LambdaFunctionSource":"https://github.com/mozilla/security/tree/master/operations/lambda_functions/publish_to_sns"
   },
   "Resources":{
     "InfosecIncidentResponseRole":{
