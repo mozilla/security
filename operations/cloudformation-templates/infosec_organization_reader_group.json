@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"AWS CloudFormation template to create the IAM user group granting it's members rights to read AWS Organizations data from the IT Consolidated Billing account",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Resources":{
+    "RoleAssumptionPolicy": {
+      "Type": "AWS::IAM::ManagedPolicy",
+      "Properties": {
+        "Description" : "Policy which grants users rights to assume the Infosec AWS Organizations Reader Role",
+        "PolicyDocument" : {
+          "Version":"2012-10-17",
+          "Statement" : [{
+            "Effect" : "Allow",
+            "Action" : "sts:AssumeRole",
+            "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
+            "Resource" : "arn:aws:iam::329567179436:role/Infosec-Organization-Reader"
+          }]
+        }
+      }
+    },
+    "SecurityAuditorUserGroup": {
+      "Type": "AWS::IAM::Group",
+      "Properties": {
+        "GroupName": "AWSOrganizationsReaderUserGroup",
+        "ManagedPolicyArns": [
+          {"Ref": "RoleAssumptionPolicy"}
+        ]
+      }
+    }
+  }
+}
