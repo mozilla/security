@@ -1,8 +1,15 @@
 {
   "AWSTemplateFormatVersion":"2010-09-09",
-  "Description":"secure-clouldtrail-new-logs SQS queue and policy",
+  "Description":"secure-cloudtrail-new-logs SQS queue and policy",
   "Metadata":{
-    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates",
+    "Notes1":"This template creates the SQS queue which subscribes to the",
+    "Notes2":"MozillaCloudTrailLogs SNS topic. The SNS notifications that each AWS account's",
+    "Notes3":"CloudTrail service emits from each region indicating that CloudTrail has",
+    "Notes4":"produced a new CloudTrail log file and stored it in S3 are sent to the",
+    "Notes5":"MozillaCloudTrailLogs SNS topic which in turn end up in this SQS queue. MozDef",
+    "Notes6":"then consumes these notifications from this queue so that it knows to go, fetch",
+    "Notes7":"and process each new CloudTrail log, newly written in S3."
   },
   "Mappings":{
     "VariablesMap":{
@@ -15,7 +22,7 @@
     "Queue":{
       "Type":"AWS::SQS::Queue",
       "Properties":{
-        "QueueName":"secure-clouldtrail-new-log-notifications"
+        "QueueName":"secure-cloudtrail-new-log-notifications"
       }
     },
     "QueuePolicy":{
