@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Roles for dinopark milestone 1 to access mozilla iam data in s3.  Expire on 01012019"
+Description: "IAM Role delegating rights from the infosec-prod AWS account to the mozilla-iam AWS account. Grants rights to access IAM data in infosec-prod S3. Expires on 2019-01-01"
 Parameters:
   ldapBucket:
     Type: String
