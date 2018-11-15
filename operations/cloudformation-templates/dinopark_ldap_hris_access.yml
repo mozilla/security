@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "IAM Role delegating rights from the infosec-prod AWS account to the mozilla-iam AWS account. Grants rights to access IAM data in infosec-prod S3. Expires on 2019-01-01"
+Parameters:
+  ldapBucket:
+    Type: String
+    Default: 'cis-ldap2s3-publisher-data'
+  hrisBucket:
+    Type: String
+    Default: 'hris-data-prod.mozilla.com'
+  crossAccountId:
+    Type: String
+    Default: '320464205386'
+Resources:
+  ManagedPolicy:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Description: "Permissions for the assumeRole to be able to get objects from the ldap and hris buckets."
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Action:
+              - "s3:getObject"
+              - "s3:ListObjects"
+              - "s3:ListBucket"
+            Resource:
+              - Fn::Join: ['', ['arn:aws:s3:::', {Ref: hrisBucket}, '/*' ]]
+              - Fn::Join: ['', ['arn:aws:s3:::', {Ref: hrisBucket}]]
+              - Fn::Join: ['', ['arn:aws:s3:::', {Ref: ldapBucket}, '/*' ]]
+              - Fn::Join: ['', ['arn:aws:s3:::', {Ref: ldapBucket}]]
+      ManagedPolicyName: "DinoParkS3AccessPermissions"
+  CrossAccountRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              AWS:
+                - Fn::Join: ['', ['arn:aws:iam::', {Ref: crossAccountId}, ':root']]
+            Action:
+              - "sts:AssumeRole"
+            Condition:
+              StringEquals:
+                aws:PrincipalType: User
+              Bool:
+                aws:MultiFactorAuthPresent: 'true'
+              DateLessThan:
+                aws:CurrentTime: '2019-01-01T00:00:00Z'
+      ManagedPolicyArns:
+        - !Ref 'ManagedPolicy'
+      RoleName: "IAMTeamDataAccess"

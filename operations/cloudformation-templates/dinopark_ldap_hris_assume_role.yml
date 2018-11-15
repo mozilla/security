@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "User group to be loaded in the mozilla-iam AWS account granting users rights to assume IAMTeamDataAccess role in infosec-prod AWS account to access IAM data in S3"
+Parameters:
+  assumeRoleArn:
+    Type: String
+    Default: 'arn:aws:iam::371522382791:role/IAMTeamDataAccess'
+Resources:
+  DataAccessGroup:
+    Type: "AWS::IAM::Group"
+    Properties:
+      GroupName: "IAMTeamDataAccess"
+  IAMTeamCanAssumeRole:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Description: Allow Mozilla IAM team data access members to assume role.
+      Path: /
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Action: sts:AssumeRole
+            Resource:
+              - !Ref assumeRoleArn
+      Groups:
+        - "IAMTeamDataAccess"
+      ManagedPolicyName: "DinoParkDataAssumeRolePermission"
