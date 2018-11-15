@@ -12,7 +12,7 @@ Resources:
   IAMTeamCanAssumeRole:
     Type: "AWS::IAM::ManagedPolicy"
     Properties:
-      Description: Allow incident responders to assume role.
+      Description: Allow Mozilla IAM team data access members to assume role.
       Path: /
       PolicyDocument:
         Version: "2012-10-17"
