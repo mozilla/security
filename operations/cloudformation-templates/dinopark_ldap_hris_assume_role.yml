@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Roles for dinopark milestone 1 to access mozilla iam data in s3.  Expire on 01012019"
+Description: "User group to be loaded in the mozilla-iam AWS account granting users rights to assume IAMTeamDataAccess role in infosec-prod AWS account to access IAM data in S3"
 Parameters:
   assumeRoleArn:
     Type: String
