@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Roles for dinopark milestone 1 to access mozilla iam data in s3.  Expire on 01012019"
+Parameters:
+  assumeRoleArn:
+    Type: String
+    Default: 'arn:aws:iam::371522382791:role/IAMTeamDataAccess'
+Resources:
+  DataAccessGroup:
+    Type: "AWS::IAM::Group"
+    Properties:
+      GroupName: "IAMTeamDataAccess"
+  IAMTeamCanAssumeRole:
+    Type: "AWS::IAM::ManagedPolicy"
+    Properties:
+      Description: Allow incident responders to assume role.
+      Path: /
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Action: sts:AssumeRole
+            Resource:
+              - !Ref assumeRoleArn
+      Groups:
+        - "IAMTeamDataAccess"
+      ManagedPolicyName: "DinoParkDataAssumeRolePermission"
