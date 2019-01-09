@@ -1,0 +1,53 @@
+{
+  "AWSTemplateFormatVersion":"2010-09-09",
+  "Description":"AWS CloudFormation template to create the Participation Infrastructure delegated roles in infosec-prod",
+  "Metadata":{
+    "Source":"https://github.com/mozilla/security/tree/master/operations/cloudformation-templates"
+  },
+  "Mappings":{
+    "VariablesMap":{
+      "PartInfra":{
+        "AccountId":"484535289196"
+      }
+    }
+  },
+  "Resources":{
+    "PartInfraCloudWatchLogReader":{
+      "Type":"AWS::IAM::Role",
+      "Properties":{
+        "AssumeRolePolicyDocument":{
+          "Version":"2012-10-17",
+          "Statement":[
+            {
+              "Effect":"Allow",
+              "Action":"sts:AssumeRole",
+              "Principal":{
+                "AWS":{"Fn::Join":[":",["arn:aws:iam:",{"Fn::FindInMap":["VariablesMap","PartInfra","AccountId"]},"root"]]}
+              },
+              "Condition":{
+                "StringEquals":{"aws:PrincipalType":"User"},
+                "Bool": {"aws:MultiFactorAuthPresent": true}
+              }
+            }
+          ]
+        },
+        "Policies":[
+          {
+            "PolicyName":"CloudWatchLogReader",
+            "PolicyDocument":{
+              "Version":"2012-10-17",
+              "Statement":[
+                {
+                  "Effect":"Allow",
+                  "Action":"*",
+                  "Resource":"*"
+                }
+              ]
+            }
+          }
+        ],
+        "RoleName": "PartInfraCloudWatchLogReader"
+      }
+    }
+  }
+}
