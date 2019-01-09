@@ -24,7 +24,8 @@
               "Effect":"Allow",
               "Action":"sts:AssumeRole",
               "Principal":{
-                "AWS":{"Fn::Join":[":",["arn:aws:iam:",{"Fn::FindInMap":["VariablesMap","TrustedAccount","ExternalAccountId"]},"root"]]}
+                "AWS":{"Fn::Join":[":",["arn:aws:iam:",{"Fn::FindInMap":["VariablesMap","TrustedAccount","ExternalAccountId"]},"root"]]},
+                "Service":"lambda.amazonaws.com"
               }
             }
           ]
