@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create Enterprise Information Security S3 Buckets in us-east-1.
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates
+Resources:
+  InfosecCloudFormationTemplates:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: infosec-cloudformation-templates
+  InfosecLambdaUsEast1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: infosec-lambda-us-east-1
+  InfosecLambdaUsEast1BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'InfosecLambdaUsEast1'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::infosec-lambda-us-east-1/*
+  InfosecPublicData:
+    Type: AWS::S3::Bucket
+    Metadata:
+      Source: https://github.com/mozilla/infosec-public-data
+    Properties:
+      BucketName: infosec-public-data
+      WebsiteConfiguration:
+        IndexDocument: index.html
+  InfosecPublicDataBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref 'InfosecPublicData'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::infosec-public-data/*
