@@ -131,8 +131,8 @@ Resources:
                   - support:DescribeTrustedAdvisor*
                 Effect: Allow
                 Resource: '*'
-  PublishIAMRoleArnToSNS:
-    Type: Custom::PublishIAMRoleArnToSNS
+  PublishInfosecSecurityAuditRoleArnToSNS:
+    Type: Custom::PublishInfosecSecurityAuditRoleArnToSNS
     Version: '1.0'
     Properties:
       ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]

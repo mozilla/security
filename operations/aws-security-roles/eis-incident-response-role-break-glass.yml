@@ -74,7 +74,7 @@ Resources:
             Resource: !Ref BreakGlassTopic
             Effect: Allow
             Sid: BreakGlassSubscriber
-  EISIncidentResponseRole:
+  InfosecIncidentResponseRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -94,13 +94,13 @@ Resources:
       Endpoint: !Ref EmailAddress
       Protocol: email
       TopicArn: !Ref BreakGlassTopic
-  EmitStackOutput:
-    Type: Custom::EmitStackOutput
+  PublishInfosecIncidentResponseInfoToSNS:
+    Type: Custom::PublishInfosecIncidentResponseInfoToSNS
     Version: '1.0'
     Properties:
       ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
       category: AWS Incident Response Service
-      EISIncidentResponseAccountIAMRoleArn: !GetAtt EISIncidentResponseRole.Arn
-      EISIncidentResponseAccountIAMRoleName: !Ref EISIncidentResponseRole
+      InfosecIncidentResponseRoleArn: !GetAtt InfosecIncidentResponseRole.Arn
+      InfosecIncidentResponseRoleName: !Ref InfosecIncidentResponseRole
       BreakGlassSNSTopicArn: !Ref BreakGlassTopic
       BreakGlassSNSTopicName: !GetAtt BreakGlassTopic.TopicName
