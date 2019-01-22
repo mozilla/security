@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Mozilla Enterprise Information Security (EIS) Security Audit Role
 Metadata:
-  Source: https://github.com/mozilla/security/tree/master/operations/aws-security-auditor/eis-security-audit-trusting-role
+  Source: https://github.com/mozilla/security/tree/master/operations/aws-security-roles/eis-security-audit-trusting-role
 Mappings:
   Variables:
     SNSTopicForPublishingStackOutput:

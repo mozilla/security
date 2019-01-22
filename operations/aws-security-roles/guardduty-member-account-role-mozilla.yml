@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Mozilla Multi Account Manager member account role to allow GuardDuty master to accept invitations.
 Metadata:
-  Source: https://github.com/mozilla/security/blob/master/operations/aws-security-auditor/guardduty-member-account-role-mozilla.yml
+  Source: https://github.com/mozilla/security/blob/master/operations/aws-security-roles/guardduty-member-account-role-mozilla.yml
   Note1: >
     This is a customized version of
     https://github.com/mozilla/guardduty-multi-account-manager/blob/master/cloudformation/guardduty-member-account-role.yml
