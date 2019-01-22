@@ -10,9 +10,9 @@ Metadata:
     This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
 Mappings:
   Variables:
-    MasterAccount:
+    GuardDutyMasterAccount:
       Principal: arn:aws:iam::371522382791:root
-    SNSTopicForPublishingIAMRoleArn:
+    SNSTopicForPublishingStackOutput:
       Account: 371522382791
       Topic: cloudformation-stack-emissions
   TheRegionYouAreDeployingIn:
@@ -39,7 +39,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !FindInMap [ Variables, MasterAccount, Principal ]
+              AWS: !FindInMap [ Variables, GuardDutyMasterAccount, Principal ]
             Action: sts:AssumeRole
       Policies:
         - PolicyName: AllowAcceptingGuardDutyInvitation
@@ -55,17 +55,17 @@ Resources:
                   - guardduty:DeleteInvitations
                   - guardduty:GetDetector
                   - guardduty:GetInvitationsCount
-                  - guardduty:GetMasterAccount
+                  - guardduty:GetGuardDutyMasterAccount
                   - guardduty:UpdateDetector
                   - guardduty:ListInvitations
-                  - guardduty:DisassociateFromMasterAccount
+                  - guardduty:DisassociateFromGuardDutyMasterAccount
                 Resource: '*'
       Path: '/mutli-account-guard-duty/'
-  PublishIAMRoleArnsToSNS:
-    Type: Custom::PublishIAMRoleArnsToSNS
+  PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS:
+    Type: Custom::PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS
     Version: '1.0'
     Properties:
-      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingIAMRoleArn, Account ], !FindInMap [ Variables, SNSTopicForPublishingIAMRoleArn, Topic ] ] ]
+      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
       category: GuardDuty Multi Account Member Role
       GuardDutyMemberAccountIAMRoleArn: !GetAtt GuardDutyInvitationAcceptorIAMRole.Arn
       GuardDutyMemberAccountIAMRoleName: !Ref GuardDutyInvitationAcceptorIAMRole
@@ -117,12 +117,17 @@ Resources:
                         pass  # Leave the role in place when stack is deleted
                 except client.exceptions.InvalidInputException:
                     pass  # Role already exists
-                physical_id = ''.join(
-                    secrets.choice(string.ascii_uppercase + string.digits) for _ in
-                    range(13))
+                if 'PhysicalResourceId' in event:
+                    physical_id = event['PhysicalResourceId']
+                else:
+                    random_string = ''.join(
+                        secrets.choice(string.ascii_uppercase + string.digits)
+                        for _ in range(13))
+                    physical_id = "CreateGuardDutyServiceLinkedRole-{}".format(
+                        random_string)
                 cfnresponse.send(
                     event, context, cfnresponse.SUCCESS, {'RoleCreated': created},
-                    "CreateGuardDutyServiceLinkedRole-%s" % physical_id)
+                    physical_id)
       Handler: index.handler
       Runtime: python3.6
       Role: !GetAtt CloudFormationLambdaIAMRole.Arn
