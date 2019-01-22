@@ -2,11 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Mozilla Enterprise Information Security (EIS) Incident Response Role
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/aws-security-auditor/eis-incident-response-role-break-glass.yml
-  Note1: >
-    Still pending is the potential addition of a CloudWatch Event Rule in this
-    template which detects use of the EISIncidentResponseRole and emits an event
-    to the BreakGlassTopic SNS topic
-    This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
+  Note1: This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
 Parameters:
   EmailAddress:
     Type: String
