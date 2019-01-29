@@ -144,14 +144,6 @@ Resources:
                   - support:DescribeTrustedAdvisor*
                 Effect: Allow
                 Resource: '*'
-  PublishInfosecSecurityAuditRoleArnToSNS:
-    Type: Custom::PublishInfosecSecurityAuditRoleArnToSNS
-    Version: '1.0'
-    Properties:
-      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
-      category: AWS Security Auditing Service
-      SecurityAuditIAMRoleArn: !GetAtt InfosecSecurityAuditRole.Arn
-      SecurityAuditIAMRoleName: !Ref InfosecSecurityAuditRole
   InfosecIncidentResponseRole:
     Type: AWS::IAM::Role
     Properties:
@@ -212,16 +204,6 @@ Resources:
       Endpoint: !Ref EmailAddress
       Protocol: email
       TopicArn: !Ref BreakGlassTopic
-  PublishInfosecIncidentResponseInfoToSNS:
-    Type: Custom::PublishInfosecIncidentResponseInfoToSNS
-    Version: '1.0'
-    Properties:
-      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
-      category: AWS Incident Response Service
-      InfosecIncidentResponseRoleArn: !GetAtt InfosecIncidentResponseRole.Arn
-      InfosecIncidentResponseRoleName: !Ref InfosecIncidentResponseRole
-      BreakGlassSNSTopicArn: !Ref BreakGlassTopic
-      BreakGlassSNSTopicName: !GetAtt BreakGlassTopic.TopicName
   GuardDutyInvitationAcceptorIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -252,14 +234,6 @@ Resources:
                   - guardduty:DisassociateFromGuardDutyMasterAccount
                 Resource: '*'
       Path: '/mutli-account-guard-duty/'
-  PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS:
-    Type: Custom::PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS
-    Version: '1.0'
-    Properties:
-      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
-      category: GuardDuty Multi Account Member Role
-      GuardDutyMemberAccountIAMRoleArn: !GetAtt GuardDutyInvitationAcceptorIAMRole.Arn
-      GuardDutyMemberAccountIAMRoleName: !Ref GuardDutyInvitationAcceptorIAMRole
   CloudFormationLambdaIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -327,3 +301,29 @@ Resources:
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt CreateGuardDutyServiceLinkedRoleFunction.Arn
+  PublishInfosecIncidentResponseInfoToSNS:
+    Type: Custom::PublishInfosecIncidentResponseInfoToSNS
+    Version: '1.0'
+    Properties:
+      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
+      category: AWS Incident Response Service
+      InfosecIncidentResponseRoleArn: !GetAtt InfosecIncidentResponseRole.Arn
+      InfosecIncidentResponseRoleName: !Ref InfosecIncidentResponseRole
+      BreakGlassSNSTopicArn: !Ref BreakGlassTopic
+      BreakGlassSNSTopicName: !GetAtt BreakGlassTopic.TopicName
+  PublishInfosecSecurityAuditRoleArnToSNS:
+    Type: Custom::PublishInfosecSecurityAuditRoleArnToSNS
+    Version: '1.0'
+    Properties:
+      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
+      category: AWS Security Auditing Service
+      SecurityAuditIAMRoleArn: !GetAtt InfosecSecurityAuditRole.Arn
+      SecurityAuditIAMRoleName: !Ref InfosecSecurityAuditRole
+  PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS:
+    Type: Custom::PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS
+    Version: '1.0'
+    Properties:
+      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
+      category: GuardDuty Multi Account Member Role
+      GuardDutyMemberAccountIAMRoleArn: !GetAtt GuardDutyInvitationAcceptorIAMRole.Arn
+      GuardDutyMemberAccountIAMRoleName: !Ref GuardDutyInvitationAcceptorIAMRole
