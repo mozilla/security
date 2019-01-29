@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Mozilla Multi Account Manager member account role to allow GuardDuty master to accept invitations.
+Description: Mozilla Multi Account Manager member account role to allow Mozilla Enterprise Information Security (EIS) GuardDuty master to accept invitations.
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/aws-security-roles/guardduty-member-account-role-mozilla.yml
   Note1: >
@@ -8,6 +8,7 @@ Metadata:
     with Mozilla specific defaults added. This is available for use at
     https://s3.amazonaws.com/infosec-cloudformation-templates/guardduty-member-account-role-mozilla.yml
     This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
+  TemplateVersion: 1.0.0
 Mappings:
   Variables:
     GuardDutyMasterAccount:

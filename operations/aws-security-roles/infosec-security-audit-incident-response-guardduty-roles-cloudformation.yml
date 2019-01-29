@@ -2,6 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Infosec Security Audit, Incident Response and GuardDuty Member Roles
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/aws-security-roles/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
+  TemplateVersion: 3.0.0
 Parameters:
   EmailAddress:
     Type: String

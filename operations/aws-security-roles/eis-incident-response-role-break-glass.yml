@@ -3,6 +3,7 @@ Description: Mozilla Enterprise Information Security (EIS) Incident Response Rol
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/aws-security-roles/eis-incident-response-role-break-glass.yml
   Note1: This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
+  TemplateVersion: 3.0.0
 Parameters:
   EmailAddress:
     Type: String
