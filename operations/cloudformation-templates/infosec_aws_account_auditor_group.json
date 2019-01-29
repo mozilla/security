@@ -15,12 +15,14 @@
         "Description" : "Policy which grants users rights to assume security audit roles.",
         "PolicyDocument" : {
           "Version":"2012-10-17",
-          "Statement" : [{
-            "Effect" : "Allow",
-            "Action" : "sts:AssumeRole",
-            "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
-            "Resource" : "arn:aws:iam::*:role/*-InfosecSecurityAuditRole-*"
-          }]
+          "Statement" : [
+            {
+              "Effect" : "Allow",
+              "Action" : "sts:AssumeRole",
+              "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
+              "Resource" : "arn:aws:iam::*:role/*-InfosecSecurityAuditRole-*"
+            }
+          ]
         }
       }
     },

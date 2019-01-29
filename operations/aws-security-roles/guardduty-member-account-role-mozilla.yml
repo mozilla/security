@@ -18,7 +18,7 @@ Mappings:
       Topic: cloudformation-stack-emissions
   TheRegionYouAreDeployingIn:
     us-west-2:
-      WhatIsThisMapping: This constrains the regions in which you can deploy this template to only the regions listed in this mapping. This, for example, prevents deloying in ap-south-1
+      WhatIsThisMapping: This constrains the regions in which you can deploy this template to only the regions listed in this mapping. This, for example, prevents deploying in ap-south-1
       IsNotSupportedPleaseUseADifferentRegion: True
     us-east-1:
       WhatIsThisMapping: ''
