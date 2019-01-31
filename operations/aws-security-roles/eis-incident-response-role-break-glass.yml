@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Mozilla Enterprise Information Security (EIS) Incident Response Role
+Metadata:
+  Source: https://github.com/mozilla/security/blob/master/operations/aws-security-roles/eis-incident-response-role-break-glass.yml
+  Note1: This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
+  TemplateVersion: 3.0.0
+Parameters:
+  EmailAddress:
+    Type: String
+    Default: ''
+    Description: An optional email address to subscribe to notifications of use of the Incident Response role
+Conditions:
+  EmailAddressIsPresent: !Not [ !Equals [ !Ref EmailAddress, '' ] ]
+  RunningInAllowedRegion: !Equals [ !FindInMap [ TheRegionYouAreDeployingIn, !Ref 'AWS::Region', IsNotSupportedPleaseUseADifferentRegion ] , True ]
+Mappings:
+  Variables:
+    SNSTopicForPublishingStackOutput:
+      Account: 371522382791
+      Topic: cloudformation-stack-emissions
+    TrustedEISAccount:
+      AccountId: 415589142697
+    AllowedSNSSubscriber:
+      AccountId: 371522382791
+  TheRegionYouAreDeployingIn:
+    us-west-2:
+      WhatIsThisMapping: This constrains the regions in which you can deploy this template to only the regions listed in this mapping. This, for example, prevents deploying in ap-south-1
+      IsNotSupportedPleaseUseADifferentRegion: True
+    us-east-1:
+      WhatIsThisMapping: ''
+      IsNotSupportedPleaseUseADifferentRegion: True
+    us-west-1:
+      WhatIsThisMapping: ''
+      IsNotSupportedPleaseUseADifferentRegion: True
+    eu-west-1:
+      WhatIsThisMapping: ''
+      IsNotSupportedPleaseUseADifferentRegion: True
+Resources:
+  BreakGlassTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Notifications of use of the EIS Incident Response IAM Role
+      TopicName: EISIncidentResponseBreakGlass
+  BreakGlassTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref BreakGlassTopic
+      PolicyDocument:
+        Version: 2012-10-17
+        Id: BreakGlassPolicy
+        Statement:
+          - Action: sns:Publish
+            Principal:
+              AWS:
+                - !Join [ '', [ 'arn:aws:iam::', !FindInMap [ Variables, TrustedEISAccount, AccountId ], ':root' ] ]
+            Resource: !Ref BreakGlassTopic
+            Effect: Allow
+            Sid: BreakGlassPublisher
+          - Action: sns:Publish
+            Principal: '*'
+            Resource: !Ref BreakGlassTopic
+            Effect: Allow
+            Sid: BreakGlassServicePublisher
+            Condition:
+              StringEquals:
+                'AWS:SourceAccount': !FindInMap [ Variables, TrustedEISAccount, AccountId ]
+          - Action:
+              - sns:GetTopicAttributes
+              - sns:ListSubscriptionsByTopic
+              - sns:Subscribe
+            Principal:
+              AWS:
+                - !Join [ '', [ 'arn:aws:iam::', !FindInMap [ Variables, AllowedSNSSubscriber, AccountId ], ':root' ] ]
+                - !Join [ '', [ 'arn:aws:iam::', !FindInMap [ Variables, TrustedEISAccount, AccountId ], ':root' ] ]
+            Resource: !Ref BreakGlassTopic
+            Effect: Allow
+            Sid: BreakGlassSubscriber
+  InfosecIncidentResponseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: AllowEISTrustedToAssume
+            Effect: Allow
+            Principal:
+              AWS: !Join [ '', [ 'arn:aws:iam::', !FindInMap [ Variables, TrustedEISAccount, AccountId ], ':root' ] ]
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+  OptionalEmailSubscription:
+    Type: "AWS::SNS::Subscription"
+    Condition: EmailAddressIsPresent
+    Properties:
+      Endpoint: !Ref EmailAddress
+      Protocol: email
+      TopicArn: !Ref BreakGlassTopic
+  PublishInfosecIncidentResponseInfoToSNS:
+    Type: Custom::PublishInfosecIncidentResponseInfoToSNS
+    Version: '1.0'
+    Properties:
+      ServiceToken: !Join [ ':', [ 'arn:aws:sns', !Ref 'AWS::Region', !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Account ], !FindInMap [ Variables, SNSTopicForPublishingStackOutput, Topic ] ] ]
+      category: AWS Incident Response Service
+      InfosecIncidentResponseRoleArn: !GetAtt InfosecIncidentResponseRole.Arn
+      InfosecIncidentResponseRoleName: !Ref InfosecIncidentResponseRole
+      BreakGlassSNSTopicArn: !Ref BreakGlassTopic
+      BreakGlassSNSTopicName: !GetAtt BreakGlassTopic.TopicName
