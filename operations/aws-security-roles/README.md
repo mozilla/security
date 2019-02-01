@@ -1,62 +1,147 @@
-These instructions show how to both create a *trusted* IAM role (likely in 
-the `infosec-prod` AWS account) and *trusting* IAM roles in foreign AWS accounts. 
-This will allow other Mozilla teams with AWS accounts to delegate permissions 
-to Infosec to enable Infosec to perform security audits and incident response.
+Mozilla Enterprise Information Security (EIS) provides these AWS Security Roles
+to enable Mozilla AWS account owners to delegate rights to EIS to provide
+security services for AWS accounts.
 
-The IAM policies in the *trusting* account's roles contain a list of permissions
-which are based on the AWS built in "Security Audit" IAM role as well as
-permissions Infosec has defined for the purposes of incident response.
+# What do these templates do?
 
-# Trusting Account
+You can delegate rights in your AWS account (member account) to EIS by deploying
+the CloudFormation templates in this repository which
+* Create a security auditing IAM role which grants EIS read only rights to
+  audit resources in the member account for security risks. You can see what 
+  rights in the member account are delegated to EIS by looking at 
+  [the trust policy in this template](eis-security-audit-trusting-role.yml)
+* Create an incident response IAM role which delegates full administrative
+  permissions from the member account to a dedicated incident response AWS 
+  account controlled by EIS. This dedicated `infosec-trusted` AWS account is a
+  locked down account that can only be used to both issue temporary STS
+  credentials for use during a security incident and to emit a notification to
+  both EIS and the member account that temporary credentials have been
+  generated. This notification is to ensure that it's not possible for anyone
+  (EIS incident responder or a potential attacker) to gain access to a member
+  account using the incident response role without both the account holder and
+  EIS being notified.
+* Create a Simple Notification Service (SNS) topic that will receive
+  notifications if the incident response role is used. Optionally you can
+  subscribe an email address to the SNS topic during stack creation
+* Create a GuardDuty member role that will allow EIS to enable GuardDuty in the
+  member account and link it up with the EIS GuardDuty master account which will
+  publish GuardDuty findings into the EIS Security Event and Information
+  Management system, MozDef.
 
-Here's how to create an IAM role for the trusting account. This would be done 
-by a foreign AWS account holder who wants to grant Infosec the ability to audit 
-the security of their AWS account and perform incident response in the event of
-a security issue.
+# How do I use these templates?
 
-## Create a Trusting Account using cloudformation
+Either update your existing `InfosecClientRules` CloudFormation stack or if you
+don't have one, deploy a stack.
 
-* The foreign AWS account holder should log into their AWS web console in
-  in either the `us-west-2` region or the `us-east-1` region (the only regions
-  that support AWS Lambda currently)
+## Update your existing stack
+
+### Update in the web console
+
 * Browse to the [CloudFormation section](https://console.aws.amazon.com/cloudformation/home?region=us-west-2)
-* Click the `Create Stack` button
-  * In the `Name` field enter something like `InfosecClientRoles`
-  * In the `Source` field select `Specify an Amazon S3 template URL` and type
-    in 
+* Find the `InfosecClientRules` (or whatever you named it) stack and check the check
+  circle next to it
+* In the `Actions` drop down in the upper right select `Update Stack`
+  * On the `Prerequisite - Prepare template` screen select `Replace current
+    template`
+  * In the `Amazon S3 URL` field enter 
  
-    https://s3.amazonaws.com/infosec-cloudformation-templates/infosec-security-audit-incident-response-roles-cloudformation.json
+    https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
 
 * Click the `Next` button
-* Deploy the `infosec-security-audit-incident-response-roles-cloudformation.json`
-  template
-* On the `Options` page click the `Next` button
-* On the `Review` page click the checkbox that says `I acknowledge that this
-  template might cause AWS CloudFormation to create IAM resources.`
-* Click the `Create` button
+* Enter an optional email address to receive notifcations at of use of the incident
+  response role
+* On the `Specify stack details` click the `Next` button
+* On the `Configure stack options` page click the `Next` button
+* On the `Review` page click the checkbox that says `I acknowledge that AWS 
+  CloudFormation might create IAM resources.`
+* Click the `Update stack` button
 * When the CloudFormation stack completes the creation process and the `Status`
-  field changes from `CREATE_IN_PROGRESS` to `CREATE_COMPLETE`.
+  field changes from `UPDATE_IN_PROGRESS` to `UPDATE_COMPLETE` you're done.
 
+### Update on the command line
 
-## Trusting account alternatives
+* Set the EMAIL_ADDRESS that you'd like to receive notifications at if/when the
+  incident response role is ever used
+* Enter the STACK_NAME of your existing InfosecClientRules stack
+* Enter the REGION the existing stack is deployed in 
 
-If the owner of the *trusting* account would *only* like to utilize Infosec's
-security auditing service and to take on incident response in the event of a
-security breach themselves, that account owner can instead create a *trusting*
-role which only delegates permissions to Infosec related to security auditing.
+```bash
+EMAIL_ADDRESS=example@example.com
+STACK_NAME=InfosecClientRules
+REGION=us-west-2
+AWS_DEFAULT_REGION=${REGION} aws cloudformation update-stack \
+  --stack-name ${STACK_NAME} \
+  --template-url https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml \
+  --parameters ParameterKey=EmailAddress,ParameterValue=${EMAIL_ADDRESS} \
+  --capabilities CAPABILITY_IAM
+```
 
-To do so, load this CloudFormation template instead
+## Create a new stack
 
-https://s3.amazonaws.com/infosec-cloudformation-templates/infosec-security-audit-trusting-role-cloudformation.json
+If you've not deployed a previous `InfosecClientRules` stack, or you'd prefer to
+delete your current stack and deploy a new one (instead of updating) here's how
+to create a new stack.
 
-# Trusted account
+### Create in the web console
 
-Since the *trusting* accounts delegate permissions not to a specific IAM Role
-within the `infosec-prod` AWS account, but instead to the entire `infosec-prod`
-AWS account, any user or IAM Role in the `infosec-prod` account which is granted
-permissions within the `infosec-prod` account to assume the role of the 
-*trusting* account's IAM Role can do so.
+* Start by clicking this button [![Deploy Rules](
+https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](
+https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=InfosecClientRoles&templateURL=https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml)
+* On the `Create stack` page click `Next`
+* On the `Specify stack details` enter an optional email address and click the
+  `Next` button
+* On the `Configure stack options` page click the `Next` button
+* On the `Review` page click the checkbox that says `I acknowledge that AWS 
+  CloudFormation might create IAM resources.`
+* Click the `Create stack` button
+* When the CloudFormation stack completes the creation process and the `Status`
+  field changes from `CREATE_IN_PROGRESS` to `CREATE_COMPLETE` you're done.
 
-The reason that we request the *trusting* accounts delegate permissions to the
-`infosec-prod` account and not a specific IAM role is due to a limitation in
-AWS related to multiple IAM Roles chained role assumption.
+### Create on the command line
+
+* Set the EMAIL_ADDRESS that you'd like to receive notifications at if/when the
+  incident response role is ever used
+
+```bash
+EMAIL_ADDRESS=example@example.com
+AWS_DEFAULT_REGION=us-west-2 aws cloudformation create-stack \
+  --stack-name InfosecClientRules \
+  --template-url https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml \
+  --parameters ParameterKey=EmailAddress,ParameterValue=${EMAIL_ADDRESS} \
+  --capabilities CAPABILITY_IAM
+```
+
+# Are there alternatives?
+
+If you would like to consume a subset of the three services (security auditing,
+incident response and GuardDuty) instead of all three, contact Mozilla
+Enterprise Information Security for assistance.
+
+# FAQ
+
+* Why does the incident response role trust the entire `infosec-trusted` AWS
+  account instead of a specific user or role?
+  * This is due to a limitation in how AWS STS Role assumption works that
+    prevents chaining trust relationships
+* Why doesn't detection of the use of the incident response role happen in
+  the member account instead of in the `infosec-trusted` account, wouldn't this
+  be more secure?
+  * Unfortunately, AWS CloudWatch Event Rules can not trigger on STS AssumeRole
+    calls initiated from another account, despite the fact that [AWS copies the
+    CloudTrail event](https://aws.amazon.com/blogs/security/aws-cloudtrail-now-tracks-cross-account-activity-to-its-origin/).
+    Automated detection from the member account side would require custom code
+    to parse and alert on CloudTrail events.
+* How else can I be notified about use of the incident response role beyond the
+  optional email address entered when the stack is deployed?
+  * The SNS topic created in the member account will receive any notifications
+    and you can subscribe anything you'd like to that topic (email, SMS, lambda)
+* How do the IAM Role ARN values get communicated back to EIS?
+  * Previously the `InfosecClientRules` stack contained a Lambda function which
+    emitted the ARN values to SNS. In the current version this has been changed
+    to a CloudFormation custom resource that uses our [CloudFormation Cross Account Outputs](https://github.com/mozilla/cloudformation-cross-account-outputs)
+    system instead.
+* When will GuardDuty events begin showing up in EIS MozDef?
+  * The [GuardDuty Multi Account Manager](https://github.com/mozilla/guardduty-multi-account-manager/)
+    runs nightly and links member accounts, such that GuardDuty data will be
+    present in EIS MozDef the day after the stack is deployed in the member
+    account.
