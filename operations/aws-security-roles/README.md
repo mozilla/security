@@ -30,7 +30,7 @@ the CloudFormation templates in this repository which
 
 # How do I use these templates?
 
-Either update your existing `InfosecClientRules` CloudFormation stack or if you
+Either update your existing `InfosecClientRoles` CloudFormation stack or if you
 don't have one, deploy a stack.
 
 ## Update your existing stack
@@ -38,7 +38,7 @@ don't have one, deploy a stack.
 ### Update in the web console
 
 * Browse to the [CloudFormation section](https://console.aws.amazon.com/cloudformation/home?region=us-west-2)
-* Find the `InfosecClientRules` (or whatever you named it) stack and check the check
+* Find the `InfosecClientRoles` (or whatever you named it) stack and check the check
   circle next to it
 * In the `Actions` drop down in the upper right select `Update Stack`
   * On the `Prerequisite - Prepare template` screen select `Replace current
@@ -62,12 +62,12 @@ don't have one, deploy a stack.
 
 * Set the EMAIL_ADDRESS that you'd like to receive notifications at if/when the
   incident response role is ever used
-* Enter the STACK_NAME of your existing InfosecClientRules stack
+* Enter the STACK_NAME of your existing InfosecClientRoles stack
 * Enter the REGION the existing stack is deployed in 
 
 ```bash
 EMAIL_ADDRESS=example@example.com
-STACK_NAME=InfosecClientRules
+STACK_NAME=InfosecClientRoles
 REGION=us-west-2
 AWS_DEFAULT_REGION=${REGION} aws cloudformation update-stack \
   --stack-name ${STACK_NAME} \
@@ -78,13 +78,13 @@ AWS_DEFAULT_REGION=${REGION} aws cloudformation update-stack \
 
 ## Create a new stack
 
-If you've not deployed a previous `InfosecClientRules` stack, or you'd prefer to
+If you've not deployed a previous `InfosecClientRoles` stack, or you'd prefer to
 delete your current stack and deploy a new one (instead of updating) here's how
 to create a new stack.
 
 ### Create in the web console
 
-* Start by clicking this button [![Deploy Rules](
+* Start by clicking this button [![Deploy Roles](
 https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](
 https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=InfosecClientRoles&templateURL=https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml)
 * On the `Create stack` page click `Next`
@@ -105,7 +105,7 @@ https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?
 ```bash
 EMAIL_ADDRESS=example@example.com
 AWS_DEFAULT_REGION=us-west-2 aws cloudformation create-stack \
-  --stack-name InfosecClientRules \
+  --stack-name InfosecClientRoles \
   --template-url https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml \
   --parameters ParameterKey=EmailAddress,ParameterValue=${EMAIL_ADDRESS} \
   --capabilities CAPABILITY_IAM
@@ -136,7 +136,7 @@ Enterprise Information Security for assistance.
   * The SNS topic created in the member account will receive any notifications
     and you can subscribe anything you'd like to that topic (email, SMS, lambda)
 * How do the IAM Role ARN values get communicated back to EIS?
-  * Previously the `InfosecClientRules` stack contained a Lambda function which
+  * Previously the `InfosecClientRoles` stack contained a Lambda function which
     emitted the ARN values to SNS. In the current version this has been changed
     to a CloudFormation custom resource that uses our [CloudFormation Cross Account Outputs](https://github.com/mozilla/cloudformation-cross-account-outputs)
     system instead.
