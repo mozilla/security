@@ -8,7 +8,7 @@ Metadata:
     with Mozilla specific defaults added. This is available for use at
     https://s3.amazonaws.com/infosec-cloudformation-templates/guardduty-member-account-role-mozilla.yml
     This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
-  TemplateVersion: 1.0.0
+  TemplateVersion: 1.0.1
 Mappings:
   Variables:
     GuardDutyMasterAccount:
@@ -61,7 +61,7 @@ Resources:
                   - guardduty:ListInvitations
                   - guardduty:DisassociateFromGuardDutyMasterAccount
                 Resource: '*'
-      Path: '/mutli-account-guard-duty/'
+      Path: '/multi-account-guard-duty/'
   PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS:
     Type: Custom::PublishGuardDutyInvitationAcceptorIAMRoleArnsToSNS
     Version: '1.0'
