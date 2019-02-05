@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Infosec Security Audit, Incident Response and GuardDuty Member Roles
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/aws-security-roles/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
-  TemplateVersion: 3.0.0
+  TemplateVersion: 3.0.1
 Parameters:
   EmailAddress:
     Type: String
@@ -233,7 +233,7 @@ Resources:
                   - guardduty:ListInvitations
                   - guardduty:DisassociateFromGuardDutyMasterAccount
                 Resource: '*'
-      Path: '/mutli-account-guard-duty/'
+      Path: '/multi-account-guard-duty/'
   CloudFormationLambdaIAMRole:
     Type: AWS::IAM::Role
     Properties:
