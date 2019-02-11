@@ -1,0 +1,10 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: MozDef Event Queue
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates
+  Notes1: This template is used to create an SQS queue that a MozDef worker will consume from
+Resources:
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: infosec_mozdef_events
