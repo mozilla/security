@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Enterprise Information Security Dev S3 Buckets in us-east-1.
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/infosec_dev_s3_buckets_us-east-1.yml
+Mappings:
+  TheRegionYouAreDeployingIn:
+    us-east-1:
+      IsNotSupportedPleaseUseADifferentRegion: True
+Conditions:
+  RunningInAllowedRegion: !Equals [ !FindInMap [ TheRegionYouAreDeployingIn, !Ref 'AWS::Region', IsNotSupportedPleaseUseADifferentRegion ] , True ]
+Resources:
+  PublicUsEast1:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: public.us-east-1.security.allizom.org
+      VersioningConfiguration:
+        Status: Enabled  # This is required for bucket replication
+      Tags:
+        - Key: S3 Bucket Replication Note
+          Value: This bucket is replicated from public.us-west-2.security.allizom.org. Do not add or modify files in this bucket. Instead do so in the public.us-west-2.security.allizom.org bucket and it will be replicated here.
+  PublicUsEast1BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PublicUsEast1
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::public.us-east-1.security.allizom.org/*

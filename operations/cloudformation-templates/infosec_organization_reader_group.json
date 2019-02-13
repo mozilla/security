@@ -15,7 +15,10 @@
             "Effect" : "Allow",
             "Action" : "sts:AssumeRole",
             "Condition": {"Bool": {"aws:MultiFactorAuthPresent": "true"}},
-            "Resource" : "arn:aws:iam::329567179436:role/Infosec-Organization-Reader"
+            "Resource" : [
+              "arn:aws:iam::329567179436:role/Infosec-Organization-Reader",
+              "arn:aws:iam::943761894018:role/Infosec-Organization-Reader"
+            ]
           }]
         }
       }

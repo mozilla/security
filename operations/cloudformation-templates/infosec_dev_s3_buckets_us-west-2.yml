@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Enterprise Information Security Dev S3 Buckets in us-west-2.
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/infosec_dev_s3_buckets_us-west-2.yml
+Mappings:
+  TheRegionYouAreDeployingIn:
+    us-west-2:
+      IsNotSupportedPleaseUseADifferentRegion: True
+Conditions:
+  RunningInAllowedRegion: !Equals [ !FindInMap [ TheRegionYouAreDeployingIn, !Ref 'AWS::Region', IsNotSupportedPleaseUseADifferentRegion ] , True ]
+Resources:
+  PublicUsWest2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: public.us-west-2.security.allizom.org
+      ReplicationConfiguration:
+        Role: !GetAtt PublicS3BucketReplicationRole.Arn
+        Rules:
+          - Destination:
+              Bucket: arn:aws:s3:::public.us-east-1.security.allizom.org
+            Prefix: ''
+            Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled  # This is required for bucket replication
+  PublicUsWest2BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PublicUsWest2
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::public.us-west-2.security.allizom.org/*
+  PublicS3BucketReplicationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - s3.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: CrossRegionS3BucketReplication
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionAcl
+                Resource: arn:aws:s3:::public.us-west-2.security.allizom.org/*
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetReplicationConfiguration
+                Resource: arn:aws:s3:::public.us-west-2.security.allizom.org
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateDelete
+                  - s3:ReplicateTags
+                  - s3:GetObjectVersionTagging
+                Resource: arn:aws:s3:::public.us-east-1.security.allizom.org/*
