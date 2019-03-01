@@ -29,26 +29,6 @@ Resources:
             Principal: '*'
             Action: s3:GetObject
             Resource: arn:aws:s3:::infosec-lambda-us-east-1/*
-  InfosecPublicData:
-    Type: AWS::S3::Bucket
-    Metadata:
-      Source: https://github.com/mozilla/infosec-public-data
-    Properties:
-      BucketName: infosec-public-data
-      WebsiteConfiguration:
-        IndexDocument: index.html
-  InfosecPublicDataBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref InfosecPublicData
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Sid: ''
-            Effect: Allow
-            Principal: '*'
-            Action: s3:GetObject
-            Resource: arn:aws:s3:::infosec-public-data/*
   PublicUsEast1:
     Type: AWS::S3::Bucket
     Properties:
