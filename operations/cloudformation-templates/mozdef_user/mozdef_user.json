@@ -183,11 +183,6 @@
               "Effect": "Allow",
               "Action": "sts:GetSessionToken",
               "Resource": "*"
-            },
-            {
-              "Effect": "Allow",
-              "Action": "sts:AssumeRole",
-              "Resource": "arn:aws:iam::*:role/*-InfosecSecurityAuditRole-*"
             }
           ]
         }
