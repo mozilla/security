@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM Role that grants Enterprise Information Security and Firefox
+  Services Operations permission to read AWS Organization information
+Metadata:
+  Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/organization-reader-iam-role.yml
+Mappings:
+  VariablesMap:
+    TrustedAccount:
+      EISAccountId: '371522382791'
+      FirefoxServicesAccountId: '361527076523'
+      RoleName: Organization-Reader
+Resources:
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !FindInMap [ VariablesMap, TrustedAccount, RoleName ]
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRole
+            Principal:
+              AWS:
+                - !Join [ ':', [ 'arn:aws:iam:', !FindInMap [ VariablesMap, TrustedAccount, EISAccountId ], 'root' ] ]
+                - !Join [ ':', [ 'arn:aws:iam:', !FindInMap [ VariablesMap, TrustedAccount, FirefoxServicesAccountId ], 'root' ] ]
+  IAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Policy granting AWS Organization read permissions
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - organizations:Describe*
+              - organizations:List*
+            Resource: '*'
+      Roles:
+        - !Ref IAMRole
+Outputs:
+  AssumeRoleArn:
+    Value: !GetAtt IAMRole.Arn
+    Description: The ARN of the IAM Role
