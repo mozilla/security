@@ -20,7 +20,7 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: ''
+          - Sid: 'AllowGetObject'
             Effect: Allow
             Principal: '*'
             Action: s3:GetObject
@@ -45,11 +45,16 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: ''
+          - Sid: 'AllowGetObject'
             Effect: Allow
             Principal: '*'
             Action: s3:GetObject
             Resource: arn:aws:s3:::public.us-west-2.infosec.mozilla.org/*
+          - Sid: 'AllowListBucket'
+            Effect: Allow
+            Principal: '*'
+            Action: s3:ListBucket
+            Resource: arn:aws:s3:::public.us-west-2.infosec.mozilla.org
   PublicUnlistedUsWest2:
     # This bucket is intended to contain public files but to ensure that the
     # contents of the bucket can't be enumerated/listed. This way a caller

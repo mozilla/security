@@ -24,7 +24,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Sid: ''
+          - Sid: 'AllowGetObject'
             Effect: Allow
             Principal: '*'
             Action: s3:GetObject
@@ -45,8 +45,13 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Sid: ''
+          - Sid: 'AllowGetObject'
             Effect: Allow
             Principal: '*'
             Action: s3:GetObject
             Resource: arn:aws:s3:::public.us-east-1.infosec.mozilla.org/*
+          - Sid: 'AllowListBucket'
+            Effect: Allow
+            Principal: '*'
+            Action: s3:ListBucket
+            Resource: arn:aws:s3:::public.us-east-1.infosec.mozilla.org
