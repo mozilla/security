@@ -108,3 +108,10 @@ Resources:
                   - s3:ReplicateTags
                   - s3:GetObjectVersionTagging
                 Resource: arn:aws:s3:::public.us-east-1.infosec.mozilla.org/*
+  MozillaInfosecAuth0RuleAssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: mozilla-infosec-auth0-rule-assets
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
