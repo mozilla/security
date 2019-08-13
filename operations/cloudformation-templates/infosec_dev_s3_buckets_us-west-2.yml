@@ -2,12 +2,14 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Create Enterprise Information Security Dev S3 Buckets in us-west-2.
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/infosec_dev_s3_buckets_us-west-2.yml
-Mappings:
-  TheRegionYouAreDeployingIn:
-    us-west-2:
-      IsNotSupportedPleaseUseADifferentRegion: True
-Conditions:
-  RunningInAllowedRegion: !Equals [ !FindInMap [ TheRegionYouAreDeployingIn, !Ref 'AWS::Region', IsNotSupportedPleaseUseADifferentRegion ] , True ]
+Rules:
+  CorrectRegionAndAccount:
+    RuleCondition: !Equals [ '1', '1' ]
+    Assertions:
+      - Assert: !Equals [ !Ref 'AWS::Region', us-west-2 ]
+        AssertDescription: This template deploys us-west-2 resources and must be depoyed only in us-west-2
+      - Assert: !Equals [ !Ref 'AWS::AccountId', '656532927350' ]
+        AssertDescription: This template deploys infosec-dev resources and must be depoyed only in infosec-dev 656532927350 AWS account
 Resources:
   PublicUsWest2:
     Type: AWS::S3::Bucket
