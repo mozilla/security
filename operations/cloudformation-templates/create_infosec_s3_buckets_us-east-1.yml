@@ -2,12 +2,14 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Create Enterprise Information Security S3 Buckets in us-east-1.
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/create_infosec_s3_buckets_us-east-1.yml
-Mappings:
-  TheRegionYouAreDeployingIn:
-    us-east-1:
-      IsNotSupportedPleaseUseADifferentRegion: True
-Conditions:
-  RunningInAllowedRegion: !Equals [ !FindInMap [ TheRegionYouAreDeployingIn, !Ref 'AWS::Region', IsNotSupportedPleaseUseADifferentRegion ] , True ]
+Rules:
+  CorrectRegionAndAccount:
+    RuleCondition: !Equals [ '1', '1' ]
+    Assertions:
+      - Assert: !Equals [ !Ref 'AWS::Region', us-east-1 ]
+        AssertDescription: This template deploys us-east-1 resources and must be depoyed only in us-east-1
+      - Assert: !Equals [ !Ref 'AWS::AccountId', '371522382791' ]
+        AssertDescription: This template deploys infosec-dev resources and must be depoyed only in infosec-prod 371522382791 AWS account
 Resources:
   InfosecCloudFormationTemplates:
     Type: AWS::S3::Bucket
