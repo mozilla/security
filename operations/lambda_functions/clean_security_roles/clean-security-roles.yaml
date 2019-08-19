@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Clean out security roles from DynamoDB that no longer work
+Parameters:
+  StackEmissionDynamoDBTableName:
+    Type: String
+    Description: The DynamoDB table name of the CloudFormation Stack Emission table containing the IAM Roles used to gather policies from various AWS accounts
+    Default: cloudformation-stack-emissions
+  StackEmissionDynamoDBTableRegion:
+    Type: String
+    Description: The region containing the DynamoDB CloudFormation Stack Emission table containing the IAM Roles used to gather policies from various AWS accounts
+    Default: us-west-2
+Resources:
+  CleanerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+        - PolicyName: AllowLambdaLogging
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+        - PolicyName: AllowQueryStackEmissionTable
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !Join ['', ['arn:aws:dynamodb:', !Ref 'StackEmissionDynamoDBTableRegion', ':', !Ref 'AWS::AccountId', ':table/', !Ref 'StackEmissionDynamoDBTableName', '/*']]
+                  - !Join ['', ['arn:aws:dynamodb:', !Ref 'StackEmissionDynamoDBTableRegion', ':', !Ref 'AWS::AccountId', ':table/', !Ref 'StackEmissionDynamoDBTableName']]
+        - PolicyName: AllowAssumeSecurityAuditRole
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:AssumeRole
+                Resource: '*'
+  CleanerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Clean out security roles from DynamoDB that no longer work
+      Code: clean_security_roles.py
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref StackEmissionDynamoDBTableName
+          TABLE_REGION: !Ref StackEmissionDynamoDBTableRegion
+      Handler: clean_security_roles.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt CleanerRole.Arn
+      Tags:
+        - Key: application
+          Value: clean-security-roles
+        - Key: stack
+          Value: !Ref AWS::StackName
+      Timeout: 900
+  CleanerFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      # Let's hope that the Lambda function doesn't execute before this LogGroup
+      # resource is created, creating the LogGroup with no expiration and
+      # preventing this resource from creating
+      LogGroupName: !Join [ '/', ['/aws/lambda', !Ref 'CleanerFunction' ] ]
+      RetentionInDays: 14
