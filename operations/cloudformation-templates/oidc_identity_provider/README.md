@@ -16,16 +16,35 @@ make S3_BUCKET=my-s3-bucket-name deploy-cloudformation-stack
 This will launch the stack with example URL, Client IDs and Thumbprints.
 
 To pass your actual settings, either
-* Run `make` and pass in the values, for example
+* Launch a stack from a hosted template of a specific git commit
+  ```
+  https://s3-us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/oidc-identity-provider/4ec706be65f5a4b252036121921e4206b7d853ec/oidc_identity_provider.4ec706be65f5a4b252036121921e4206b7d853ec.yml
+  ```
+  * By pasting the S3 URL above into the AWS Web Console when creating a new
+    CloudFormation stack
+  * By using the AWS CLI with the S3 URL above to create a new CloudFormation
+    stack.
+    ```shell script
+    aws cloudformation create-stack \
+        --stack-name OIDCIdentityProvider \
+        --template-url https://s3-us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/oidc-identity-provider/4ec706be65f5a4b252036121921e4206b7d853ec/oidc_identity_provider.4ec706be65f5a4b252036121921e4206b7d853ec.yml \
+        --capabilities CAPABILITY_IAM \
+        --parameters \
+            ParameterKey=Url,ParameterValue=https://example.com/ \
+            ParameterKey=ClientIDList,ParameterValue='id1\,id2' \
+            ParameterKey=ThumbprintList,ParameterValue='1234567890abcdef1234567890abcdef12345678\,234567890abcdef1234567890abcdef123456789'
+    ```
+* Host the Lambda code in your own S3 bucket by running `make` and passing in the values, for example
   ```shell script
   export S3_BUCKET=my-s3-bucket-name
+  export URL=https://example.com/
   export CLIENT_ID_LIST=clientid1,clientid2
   export THUMBPRINT_LIST=34567890abcdef1234567890abcdef1234567890,4567890abcdef1234567890abcdef1234567890a
   make deploy-cloudformation-stack
   ```
 * Edit the `Makefile` and set new defaults
 * Launch the stack with the defaults, then do a stack update and pass in the
-  real values
+  real values either on the command line or in the web console
 
 ## Why a separate Lambda file
 
