@@ -1,0 +1,66 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: OIDC identity provider
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/oidc_identity_provider/
+Parameters:
+  Url:
+    Type: String
+    Description: The URL of the identity provider. The URL must begin with https:// and should correspond to the iss claim in the provider's OpenID Connect ID tokens
+    AllowedPattern: https://.*
+    ConstraintDescription: The URL must begin with https://
+  ClientIDList:
+    Type: String
+    Description: A comma delimited list of client IDs (also known as audiences)
+  ThumbprintList:
+    Type: String
+    Description: A comma delimited list list of server certificate thumbprints for the OpenID Connect (OIDC) identity provider's server certificates (also known as CA Thumbprints)
+Resources:
+  IdentityProvider:
+    Type: Custom::IdentityProvider
+    Properties:
+      ServiceToken: !GetAtt IdentityProviderCreatorFunction.Arn
+      Region: !Ref "AWS::Region"
+      Url: !Ref Url
+      ClientIDList: !Ref ClientIDList
+      ThumbprintList: !Ref ThumbprintList
+  IdentityProviderCreatorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.7
+      Handler: oidc_identity_provider.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt IdentityProviderCreatorRole.Arn
+      Timeout: 30
+      Code: build/
+  IdentityProviderCreatorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: ManageOIDCProvider
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:GetOpenIDConnectProvider
+                  - iam:CreateOpenIDConnectProvider
+                  - iam:AddClientIDToOpenIDConnectProvider
+                  - iam:RemoveClientIDFromOpenIDConnectProvider
+                  - iam:UpdateOpenIDConnectProviderThumbprint
+                  - iam:DeleteOpenIDConnectProvider
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
