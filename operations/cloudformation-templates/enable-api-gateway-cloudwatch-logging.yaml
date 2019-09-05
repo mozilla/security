@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM Role to grant API Gateway permission to create CloudWatch logs
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/enable-api-gateway-cloudwatch-logging.yaml
+Resources:
+  ApiGatewayCloudWatchLoggingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Role to grant API Gateway permission to create CloudWatch logs
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+  ApiGatewayAccountSettings:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchLoggingRole.Arn
