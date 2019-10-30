@@ -77,3 +77,10 @@ Resources:
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
+  AwsFederatedRpDataStoreBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: dev-mozilla-aws-federated-rp-data-store
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
