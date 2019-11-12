@@ -27,6 +27,7 @@ Resources:
                   - !Ref Group
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
+      MaxSessionDuration: 43200  # 12 hours
   ReadOnlyIAMRole:
     Type: AWS::IAM::Role
     Properties:
@@ -47,3 +48,4 @@ Resources:
                   - !Ref Group
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/ReadOnlyAccess
+      MaxSessionDuration: 43200  # 12 hours
