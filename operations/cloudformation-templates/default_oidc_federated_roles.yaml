@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Mozilla federated Admin and ReadOnly IAM roles
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/default_oidc_federated_roles.yaml
+Parameters:
+  Group:
+    Type: String
+    Description: The Mozilla LDAP or Mozillians group name to grant access to the new Admin and ReadOnly IAM Roles
+Resources:
+  AdminIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: Admin
+      Description: !Join [ '', [ 'AdministratorAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume']]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Principal:
+              Federated: !Join [ '', [ 'arn:aws:iam::', !Ref 'AWS::AccountId', ':oidc-provider/auth.mozilla.auth0.com/' ]]
+            Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
+              ForAnyValue:StringEquals:
+                auth.mozilla.auth0.com/:amr:
+                  - !Ref Group
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      MaxSessionDuration: 43200  # 12 hours
+  ReadOnlyIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ReadOnly
+      Description: !Join [ '', [ 'ReadOnlyAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume']]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Principal:
+              Federated: !Join [ '', [ 'arn:aws:iam::', !Ref 'AWS::AccountId', ':oidc-provider/auth.mozilla.auth0.com/' ]]
+            Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
+              ForAnyValue:StringEquals:
+                auth.mozilla.auth0.com/:amr:
+                  - !Ref Group
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      MaxSessionDuration: 43200  # 12 hours
