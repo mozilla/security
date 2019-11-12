@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Mozilla IAM S3 Buckets
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/mozilla-iam_s3_buckets.yml
+Rules:
+  CorrectAccount:
+    RuleCondition: !Equals [ '1', '1' ]
+    Assertions:
+      - Assert: !Equals [ !Ref 'AWS::AccountId', '320464205386' ]
+        AssertDescription: This template deploys mozilla-iam resources and must be depoyed only in mozilla-iam 320464205386 AWS account
+Conditions:
+  InUsEast1: !Equals [ !Ref 'AWS::Region', us-east-1 ]
+  InUsWest2: !Equals [ !Ref 'AWS::Region', us-west-2 ]
+Resources:
+  PublicUsWest2Bucket:
+    Type: AWS::S3::Bucket
+    Condition: InUsWest2
+    Properties:
+      BucketName: public.us-west-2.iam.mozilla.com
+      ReplicationConfiguration:
+        Role: !GetAtt PublicS3BucketReplicationRole.Arn
+        Rules:
+          - Destination:
+              Bucket: arn:aws:s3:::public.us-east-1.iam.mozilla.com
+            Prefix: ''
+            Status: Enabled
+      VersioningConfiguration:
+        Status: Enabled  # This is required for bucket replication
+  PublicUsWest2BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: InUsWest2
+    Properties:
+      Bucket: !Ref PublicUsWest2Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AllowGetObject'
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::public.us-west-2.iam.mozilla.com/*
+          - Sid: 'AllowListBucket'
+            Effect: Allow
+            Principal: '*'
+            Action: s3:ListBucket
+            Resource: arn:aws:s3:::public.us-west-2.iam.mozilla.com
+  PublicUsEast1Bucket:
+    Type: AWS::S3::Bucket
+    Condition: InUsEast1
+    Properties:
+      BucketName: public.us-east-1.iam.mozilla.com
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+      VersioningConfiguration:
+        Status: Enabled  # This is required for bucket replication
+      Tags:
+        - Key: S3 Bucket Replication Note
+          Value: >-
+            This bucket is replicated from public.us-west-2.iam.mozilla.com. Do
+            not add or modify files in this bucket. Instead do so in the
+            public.us-west-2.iam.mozilla.com bucket and it will be replicated here.
+  PublicUsEast1BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Condition: InUsEast1
+    Properties:
+      Bucket: !Ref PublicUsEast1Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'AllowGetObject'
+            Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::public.us-east-1.iam.mozilla.com/*
+          - Sid: 'AllowListBucket'
+            Effect: Allow
+            Principal: '*'
+            Action: s3:ListBucket
+            Resource: arn:aws:s3:::public.us-east-1.iam.mozilla.com
+  PublicS3BucketReplicationRole:
+    Type: AWS::IAM::Role
+    Condition: InUsWest2
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - s3.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: CrossRegionS3BucketReplication
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObjectVersionForReplication
+                  - s3:GetObjectVersionAcl
+                Resource: arn:aws:s3:::public.us-west-2.iam.mozilla.com/*
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetReplicationConfiguration
+                Resource: arn:aws:s3:::public.us-west-2.iam.mozilla.com
+              - Effect: Allow
+                Action:
+                  - s3:ReplicateObject
+                  - s3:ReplicateDelete
+                  - s3:ReplicateTags
+                  - s3:GetObjectVersionTagging
+                Resource: arn:aws:s3:::public.us-east-1.iam.mozilla.com/*
