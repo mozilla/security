@@ -5,12 +5,14 @@ Metadata:
 Parameters:
   Group:
     Type: String
+    AllowedPattern: '.+'
+    ConstraintDescription: You must enter a group name
     Description: The Mozilla LDAP or Mozillians group name to grant access to the new Admin and ReadOnly IAM Roles
 Resources:
   AdminIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: Admin
+      RoleName: MAWS-Admin
       Description: !Join [ '', [ 'AdministratorAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -31,7 +33,7 @@ Resources:
   ReadOnlyIAMRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ReadOnly
+      RoleName: MAWS-ReadOnly
       Description: !Join [ '', [ 'ReadOnlyAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
