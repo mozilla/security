@@ -26,7 +26,7 @@ def get_parameters(event):
 
 
 def update_provider(url, aws_account_id, client_id_list, thumbprint_list):
-    arn = ARN_FORMAT.format(aws_account_id, url)
+    arn = ARN_FORMAT.format(aws_account_id, url[8:])
     try:
         response = iam.get_open_id_connect_provider(
             OpenIDConnectProviderArn=arn)
