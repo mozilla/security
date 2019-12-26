@@ -18,7 +18,7 @@ This will launch the stack with example URL, Client IDs and Thumbprints.
 To pass your actual settings, either
 * Launch a stack from a hosted template of a specific git commit
   ```
-  https://s3-us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/oidc-identity-provider/4ec706be65f5a4b252036121921e4206b7d853ec/oidc_identity_provider.4ec706be65f5a4b252036121921e4206b7d853ec.yml
+  https://s3-us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/oidc-identity-provider/5f48b78c87d98c18b55c98a6e5c285a80d53424c/oidc_identity_provider.5f48b78c87d98c18b55c98a6e5c285a80d53424c.yml
   ```
   * By pasting the S3 URL above into the AWS Web Console when creating a new
     CloudFormation stack
@@ -27,7 +27,7 @@ To pass your actual settings, either
     ```shell script
     aws cloudformation create-stack \
         --stack-name OIDCIdentityProvider \
-        --template-url https://s3-us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/oidc-identity-provider/4ec706be65f5a4b252036121921e4206b7d853ec/oidc_identity_provider.4ec706be65f5a4b252036121921e4206b7d853ec.yml \
+        --template-url https://s3-us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/oidc-identity-provider/5f48b78c87d98c18b55c98a6e5c285a80d53424c/oidc_identity_provider.5f48b78c87d98c18b55c98a6e5c285a80d53424c.yml \
         --capabilities CAPABILITY_IAM \
         --parameters \
             ParameterKey=Url,ParameterValue=https://example.com/ \
