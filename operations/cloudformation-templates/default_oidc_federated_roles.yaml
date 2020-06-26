@@ -2,18 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Mozilla federated Admin ReadOnly and ViewOnly IAM roles
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/default_oidc_federated_roles.yaml
-Parameters:
-  Group:
-    Type: String
-    AllowedPattern: '.+'
-    ConstraintDescription: You must enter a group name
-    Description: The Mozilla LDAP or Mozillians group name to grant access to the new Admin ReadOnly and ViewOnly IAM Roles
 Resources:
   AdminIAMRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: MAWS-Admin
-      Description: !Join [ '', [ 'AdministratorAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume']]
+      Description: !Join [ '', [ 'AdministratorAccess Federated IAM Role which the group team_opsec is permitted to assume']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -26,7 +20,7 @@ Resources:
                 auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
               ForAnyValue:StringEquals:
                 auth.mozilla.auth0.com/:amr:
-                  - !Ref Group
+                  - team_opsec
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
       MaxSessionDuration: 43200  # 12 hours
@@ -34,7 +28,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: MAWS-ReadOnly
-      Description: !Join [ '', [ 'ReadOnlyAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume. This Role enables viewing sensitive data like S3 file contents, DynamoDB table contents, etc']]
+      Description: !Join [ '', [ 'ReadOnlyAccess Federated IAM Role which the group team_opsec and mozilliansorg_infosec-prod-florian-temp-read is permitted to assume. This Role enables viewing sensitive data like S3 file contents, DynamoDB table contents, etc']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -47,7 +41,8 @@ Resources:
                 auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
               ForAnyValue:StringEquals:
                 auth.mozilla.auth0.com/:amr:
-                  - !Ref Group
+                  - team_opsec
+                  - mozilliansorg_infosec-prod-florian-temp-read
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/ReadOnlyAccess
       MaxSessionDuration: 43200  # 12 hours
@@ -55,7 +50,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: MAWS-ViewOnly
-      Description: !Join [ '', [ 'ViewOnlyAccess Federated IAM Role which the group ', !Ref 'Group', ' is permitted to assume. This Role enables viewing only resource metadata, not sensitive data like S3 file contents']]
+      Description: !Join [ '', [ 'ViewOnlyAccess Federated IAM Role which the group team_opsec is permitted to assume. This Role enables viewing only resource metadata, not sensitive data like S3 file contents']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -68,7 +63,7 @@ Resources:
                 auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
               ForAnyValue:StringEquals:
                 auth.mozilla.auth0.com/:amr:
-                  - !Ref Group
+                  - team_opsec
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/job-function/ViewOnlyAccess
       MaxSessionDuration: 43200  # 12 hours
