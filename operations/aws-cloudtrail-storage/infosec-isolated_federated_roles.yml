@@ -1,0 +1,188 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Mozilla federated Admin, CloudTrailReader and PocketCloudTrailReader IAM roles for infosec-isolated
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/aws-cloudtrail-storage/infosec-isolated_federated_roles.yml
+Parameters:
+  AdminGroup:
+    Type: String
+    AllowedPattern: '.+'
+    ConstraintDescription: You must enter a group name
+    Description: The Mozilla LDAP or Mozillians group name to grant access to the new Admin IAM Role
+  CloudTrailReaderGroup:
+    Type: String
+    AllowedPattern: '.+'
+    ConstraintDescription: You must enter a group name
+    Description: The Mozilla LDAP or Mozillians group name to grant access to the new CloudTrailReader IAM Role
+  PocketCloudTrailReaderGroup:
+    Type: String
+    AllowedPattern: '.+'
+    ConstraintDescription: You must enter a group name
+    Description: The Mozilla LDAP or Mozillians group name to grant access to the new PocketCloudTrailReader IAM Role
+Resources:
+  AthenaGlueCloudTrailReaderPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Use Athena and Glue to query CloudTrail
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListAllMyBuckets
+              - s3:GetBucketLocation
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - athena:*
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - s3:CreateBucket
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+              - s3:ListMultipartUploadParts
+              - s3:AbortMultipartUpload
+              - s3:PutObject
+            Resource: arn:aws:s3:::aws-athena-query-results-088944123687-*
+          - Effect: Allow
+            Action:
+              - glue:CreateDatabase
+              - glue:DeleteDatabase
+              - glue:GetDatabase
+              - glue:GetDatabases
+              - glue:UpdateDatabase
+              - glue:CreateTable
+              - glue:DeleteTable
+              - glue:BatchDeleteTable
+              - glue:UpdateTable
+              - glue:GetTable
+              - glue:GetTables
+              - glue:BatchCreatePartition
+              - glue:CreatePartition
+              - glue:DeletePartition
+              - glue:BatchDeletePartition
+              - glue:UpdatePartition
+              - glue:GetPartition
+              - glue:GetPartitions
+              - glue:BatchGetPartition
+            Resource: '*'
+  S3CloudTrailReaderPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Read CloudTrail S3 buckets
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListAllMyBuckets
+              - s3:GetBucketLocation
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - s3:Get*
+              - s3:List*
+            Resource:
+              - arn:aws:s3:::mozilla-cloudtrail-logs
+          - Effect: Allow
+            Action:
+              - s3:Get*
+            Resource:
+              - arn:aws:s3:::mozilla-cloudtrail-logs/*
+  PocketS3CloudTrailReaderPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Read Pocket CloudTrail S3 buckets
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:ListAllMyBuckets
+              - s3:GetBucketLocation
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - s3:Get*
+              - s3:List*
+            Resource:
+              - arn:aws:s3:::mozilla-cloudtrail-logs
+          - Effect: Allow
+            Action:
+              - s3:Get*
+            Resource:
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/293597988643/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/410318598490/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/996905175585/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/841073042184/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/613003240892/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/952044520701/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/019767145414/*
+              - arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/130841106477/*
+  AdminIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MAWS-Admin
+      Description: !Join [ '', [ 'AdministratorAccess Federated IAM Role which the group ', !Ref 'AdminGroup', ' is permitted to assume']]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Principal:
+              Federated: !Join [ '', [ 'arn:aws:iam::', !Ref 'AWS::AccountId', ':oidc-provider/auth.mozilla.auth0.com/' ]]
+            Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
+              ForAnyValue:StringEquals:
+                auth.mozilla.auth0.com/:amr:
+                  - !Ref AdminGroup
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+      MaxSessionDuration: 43200  # 12 hours
+  CloudTrailReaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MAWS-CloudTrailReader
+      Description: !Join [ '', [ 'CloudTrailReader Federated IAM Role which the group ', !Ref 'CloudTrailReaderGroup', ' is permitted to assume. This Role enables reading all CloudTrail logs as well as use Athena and Glue to search CloudTrail']]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Principal:
+              Federated: !Join [ '', [ 'arn:aws:iam::', !Ref 'AWS::AccountId', ':oidc-provider/auth.mozilla.auth0.com/' ]]
+            Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
+              ForAnyValue:StringEquals:
+                auth.mozilla.auth0.com/:amr:
+                  - !Ref CloudTrailReaderGroup
+      ManagedPolicyArns:
+        - !Ref S3CloudTrailReaderPolicy
+        - !Ref AthenaGlueCloudTrailReaderPolicy
+      MaxSessionDuration: 43200  # 12 hours
+  PocketCloudTrailReaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MAWS-PocketCloudTrailReader
+      Description: !Join [ '', [ 'PocketCloudTrailReader Federated IAM Role which the group ', !Ref 'PocketCloudTrailReaderGroup', ' is permitted to assume. This Role enables reading Pocket CloudTrail logs as well as use Athena and Glue to search CloudTrail']]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Principal:
+              Federated: !Join [ '', [ 'arn:aws:iam::', !Ref 'AWS::AccountId', ':oidc-provider/auth.mozilla.auth0.com/' ]]
+            Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
+              ForAnyValue:StringEquals:
+                auth.mozilla.auth0.com/:amr:
+                  - !Ref PocketCloudTrailReaderGroup
+      ManagedPolicyArns:
+        - !Ref PocketS3CloudTrailReaderPolicy
+        - !Ref AthenaGlueCloudTrailReaderPolicy
+      MaxSessionDuration: 43200  # 12 hours
