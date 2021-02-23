@@ -3,7 +3,6 @@ import pytest
 ENVIRONMENTS = {
     'prod': {
         "BackupBucketName": "mozdefes2backups",
-        "NewProdBackupBucketName": "mozdef-prod-es2-backups",
         "BlocklistBucketName": "mozilla_infosec_blocklist",
         "IPSpaceBucketName": "mozilla-ipspace",
         "InfosecQueueArn": "arn:aws:sqs:us-west-1:656532927350:infosec_mozdef_events",
@@ -14,7 +13,6 @@ ENVIRONMENTS = {
     },
     'qa': {
         "BackupBucketName": "mozdefes2backups",
-        "NewProdBackupBucketName": "inapplicable-temporary-bucket-name-see-bug1346391",
         "BlocklistBucketName": "mozilla_infosec_blocklist",
         "IPSpaceBucketName": "mozilla-ipspace",
         "InfosecQueueArn": "arn:aws:sqs:us-west-1:656532927350:infosec_mozdef_events_non_prod",
