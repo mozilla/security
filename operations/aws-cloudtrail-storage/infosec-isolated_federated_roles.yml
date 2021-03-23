@@ -8,16 +8,12 @@ Parameters:
     AllowedPattern: '.+'
     ConstraintDescription: You must enter a group name
     Description: The Mozilla LDAP or Mozillians group name to grant access to the new Admin IAM Role
-  CloudTrailReaderGroup:
-    Type: String
-    AllowedPattern: '.+'
-    ConstraintDescription: You must enter a group name
-    Description: The Mozilla LDAP or Mozillians group name to grant access to the new CloudTrailReader IAM Role
-  PocketCloudTrailReaderGroup:
-    Type: String
-    AllowedPattern: '.+'
-    ConstraintDescription: You must enter a group name
-    Description: The Mozilla LDAP or Mozillians group name to grant access to the new PocketCloudTrailReader IAM Role
+  CloudTrailReaderGroups:
+    Type: CommaDelimitedList
+    Description: The Mozilla LDAP or Mozillians group names to grant access to the new CloudTrailReader IAM Role
+  PocketCloudTrailReaderGroups:
+    Type: CommaDelimitedList
+    Description: The Mozilla LDAP or Mozillians group names to grant access to the new PocketCloudTrailReader IAM Role
 Resources:
   AthenaGlueCloudTrailReaderPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -146,7 +142,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: MAWS-CloudTrailReader
-      Description: !Join [ '', [ 'CloudTrailReader Federated IAM Role which the group ', !Ref 'CloudTrailReaderGroup', ' is permitted to assume. This Role enables reading all CloudTrail logs as well as use Athena and Glue to search CloudTrail']]
+      Description: !Join [ '', [ 'CloudTrailReader Federated IAM Role which the group ', !Join [ '', !Ref 'CloudTrailReaderGroups' ], ' is permitted to assume. This Role enables reading all CloudTrail logs as well as use Athena and Glue to search CloudTrail']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -158,8 +154,7 @@ Resources:
               StringEquals:
                 auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
               ForAnyValue:StringEquals:
-                auth.mozilla.auth0.com/:amr:
-                  - !Ref CloudTrailReaderGroup
+                auth.mozilla.auth0.com/:amr: !Ref CloudTrailReaderGroups
       ManagedPolicyArns:
         - !Ref S3CloudTrailReaderPolicy
         - !Ref AthenaGlueCloudTrailReaderPolicy
@@ -168,7 +163,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: MAWS-PocketCloudTrailReader
-      Description: !Join [ '', [ 'PocketCloudTrailReader Federated IAM Role which the group ', !Ref 'PocketCloudTrailReaderGroup', ' is permitted to assume. This Role enables reading Pocket CloudTrail logs as well as use Athena and Glue to search CloudTrail']]
+      Description: !Join [ '', [ 'PocketCloudTrailReader Federated IAM Role which the group ', !Join [ '', !Ref 'PocketCloudTrailReaderGroups' ], ' is permitted to assume. This Role enables reading Pocket CloudTrail logs as well as use Athena and Glue to search CloudTrail']]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -180,8 +175,7 @@ Resources:
               StringEquals:
                 auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
               ForAnyValue:StringEquals:
-                auth.mozilla.auth0.com/:amr:
-                  - !Ref PocketCloudTrailReaderGroup
+                auth.mozilla.auth0.com/:amr: !Ref PocketCloudTrailReaderGroups
       ManagedPolicyArns:
         - !Ref PocketS3CloudTrailReaderPolicy
         - !Ref AthenaGlueCloudTrailReaderPolicy
