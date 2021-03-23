@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Mozilla federated Admin ReadOnly ViewOnly and SecurityAuditor IAM roles
+Description: Mozilla federated Admin ReadOnly ViewOnly SecurityAuditor and GuardDutyReader IAM roles
 Metadata:
-  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/default_oidc_federated_roles.yaml
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/infosec-prod_oidc_federated_roles.yaml
 Resources:
   AdminIAMRole:
     Type: AWS::IAM::Role
@@ -236,3 +236,25 @@ Resources:
                   - SecurityAuditIAMRoleName
               StringEqualsIfExists:
                 "dynamodb:Select": SPECIFIC_ATTRIBUTES
+  GuardDutyReaderIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: MAWS-GuardDutyReader
+      Description: !Join [ '', [ 'AmazonGuardDutyReadOnlyAccess Federated IAM Role which the groups team_opsec and team_secops are permitted to assume. This Role enables read access to the GuardDuty parent in the infosec-prod AWS account']]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Principal:
+              Federated: !Join [ '', [ 'arn:aws:iam::', !Ref 'AWS::AccountId', ':oidc-provider/auth.mozilla.auth0.com/' ]]
+            Action: sts:AssumeRoleWithWebIdentity
+            Effect: Allow
+            Condition:
+              StringEquals:
+                auth.mozilla.auth0.com/:aud: N7lULzWtfVUDGymwDs0yDEq6ZcwmFazj
+              ForAnyValue:StringEquals:
+                auth.mozilla.auth0.com/:amr:
+                  - team_opsec
+                  - team_secops
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonGuardDutyReadOnlyAccess
+      MaxSessionDuration: 43200  # 12 hours
