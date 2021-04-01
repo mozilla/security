@@ -114,6 +114,10 @@ Resources:
             Action:
               - sts:AssumeRole
             NotResource: 'arn:aws:iam::371522382791:role/*'
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: 'arn:aws:iam::371522382791:role/InfosecClientRoles-InfosecSecurityAuditRole-*'
       PolicyName: SecurityAuditorRoleAssumer
       Roles:
         - !Ref SecurityAuditorIAMRole
