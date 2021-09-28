@@ -21,6 +21,7 @@ Resources:
               ForAnyValue:StringEquals:
                 auth.mozilla.auth0.com/:amr:
                   - team_opsec
+                  - mozilliansorg_secops-aws-admins
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
       MaxSessionDuration: 43200  # 12 hours
@@ -42,6 +43,7 @@ Resources:
               ForAnyValue:StringEquals:
                 auth.mozilla.auth0.com/:amr:
                   - team_opsec
+                  - mozilliansorg_secops-aws-admins
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/ReadOnlyAccess
       MaxSessionDuration: 43200  # 12 hours
@@ -63,6 +65,7 @@ Resources:
               ForAnyValue:StringEquals:
                 auth.mozilla.auth0.com/:amr:
                   - team_opsec
+                  - mozilliansorg_secops-aws-admins
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/job-function/ViewOnlyAccess
       MaxSessionDuration: 43200  # 12 hours
