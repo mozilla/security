@@ -16,51 +16,8 @@ Parameters:
     Description: A comma delimited list list of server certificate thumbprints for the OpenID Connect (OIDC) identity provider's server certificates (also known as CA Thumbprints)
 Resources:
   IdentityProvider:
-    Type: Custom::IdentityProvider
+    Type: AWS::IAM::OIDCProvider
     Properties:
-      ServiceToken: !GetAtt IdentityProviderCreatorFunction.Arn
-      Region: !Ref "AWS::Region"
+      ClientIdList: !Split [ ",", !Ref ClientIDList ]
+      ThumbprintList: !Split [ ",", !Ref ThumbprintList ]
       Url: !Ref Url
-      ClientIDList: !Ref ClientIDList
-      ThumbprintList: !Ref ThumbprintList
-  IdentityProviderCreatorFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Runtime: python3.7
-      Handler: oidc_identity_provider.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt IdentityProviderCreatorRole.Arn
-      Timeout: 30
-      Code: build/
-  IdentityProviderCreatorRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: ManageOIDCProvider
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - iam:GetOpenIDConnectProvider
-                  - iam:CreateOpenIDConnectProvider
-                  - iam:AddClientIDToOpenIDConnectProvider
-                  - iam:RemoveClientIDFromOpenIDConnectProvider
-                  - iam:UpdateOpenIDConnectProviderThumbprint
-                  - iam:DeleteOpenIDConnectProvider
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: "*"
