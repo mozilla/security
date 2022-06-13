@@ -294,7 +294,7 @@ Resources:
                     event, context, cfnresponse.SUCCESS, {'RoleCreated': created},
                     physical_id)
       Handler: index.handler
-      Runtime: python3.6
+      Runtime: python3.9
       Role: !GetAtt CloudFormationLambdaIAMRole.Arn
       Timeout: 20
   CreateGuardDutyServiceLinkedRole:
