@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Incident responders user group that enables self management of password and MFA as well as assuming incident response roles in other accounts
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/infosec-trusted-incident-responders-user-group.yml
+Resources:
+  UserCredentialSelfManagementPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allow users to manage their own credentials and MFA
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowViewAccountInfo
+            Effect: Allow
+            Action:
+              - iam:GetAccountPasswordPolicy
+              - iam:ListVirtualMFADevices
+            Resource: '*'
+          - Sid: AllowManageOwnPasswords
+            Effect: Allow
+            Action:
+              - iam:ChangePassword
+              - iam:GetUser
+            Resource: 'arn:aws:iam::*:user/${aws:username}'
+          - Sid: AllowManageOwnAccessKeys
+            Effect: Allow
+            Action:
+              - iam:CreateAccessKey
+              - iam:DeleteAccessKey
+              - iam:ListAccessKeys
+              - iam:UpdateAccessKey
+            Resource: 'arn:aws:iam::*:user/${aws:username}'
+          - Sid: AllowManageOwnUserMFA
+            Effect: Allow
+            Action:
+              - iam:DeactivateMFADevice
+              - iam:EnableMFADevice
+              - iam:ListMFADevices
+              - iam:ResyncMFADevice
+            Resource: 'arn:aws:iam::*:user/${aws:username}'
+          - Sid: DenyAllExceptListedIfNoMFA
+            Effect: Deny
+            NotAction:
+              - iam:CreateVirtualMFADevice
+              - iam:EnableMFADevice
+              - iam:GetUser
+              - iam:ListMFADevices
+              - iam:ListVirtualMFADevices
+              - iam:ResyncMFADevice
+              - sts:GetSessionToken
+            Resource: '*'
+            Condition:
+              BoolIfExists:
+                'aws:MultiFactorAuthPresent': false
+  AllowAssumeRolePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Allow assuming IAM Roles
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowAssumeRole
+            Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Resource: '*'
+  IncidentResponderUserGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: incident-responders
+      ManagedPolicyArns:
+        - !Ref UserCredentialSelfManagementPolicy
+        - !Ref AllowAssumeRolePolicy
