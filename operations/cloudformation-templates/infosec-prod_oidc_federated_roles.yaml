@@ -111,6 +111,10 @@ Resources:
                   - category
                   - SecurityAuditIAMRoleArn
                   - SecurityAuditIAMRoleName
+                  - InfosecIncidentResponseRoleArn
+                  - InfosecIncidentResponseRoleName
+                  - BreakGlassSNSTopicArn
+                  - BreakGlassSNSTopicName
               StringEqualsIfExists:
                 "dynamodb:Select": SPECIFIC_ATTRIBUTES
           - Effect: Allow
