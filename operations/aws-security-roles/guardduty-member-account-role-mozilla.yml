@@ -8,7 +8,7 @@ Metadata:
     with Mozilla specific defaults added. This is available for use at
     https://s3.amazonaws.com/infosec-cloudformation-templates/guardduty-member-account-role-mozilla.yml
     This template can only be deployed in us-west-2, us-east-1, us-west-1 and eu-west-1.
-  TemplateVersion: 1.0.1
+  TemplateVersion: 1.0.2
 Mappings:
   Variables:
     GuardDutyMasterAccount:
@@ -130,7 +130,7 @@ Resources:
                     event, context, cfnresponse.SUCCESS, {'RoleCreated': created},
                     physical_id)
       Handler: index.handler
-      Runtime: python3.6
+      Runtime: python3.9
       Role: !GetAtt CloudFormationLambdaIAMRole.Arn
       Timeout: 20
   CreateGuardDutyServiceLinkedRole:

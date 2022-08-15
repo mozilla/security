@@ -2,7 +2,8 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Infosec Security Audit, Incident Response and GuardDuty Member Roles
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/aws-security-roles/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
-  TemplateVersion: 3.0.1
+  URL: https://s3.us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
+  TemplateVersion: 3.0.2
 Parameters:
   EmailAddress:
     Type: String
@@ -294,7 +295,7 @@ Resources:
                     event, context, cfnresponse.SUCCESS, {'RoleCreated': created},
                     physical_id)
       Handler: index.handler
-      Runtime: python3.6
+      Runtime: python3.9
       Role: !GetAtt CloudFormationLambdaIAMRole.Arn
       Timeout: 20
   CreateGuardDutyServiceLinkedRole:
