@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: IAM Role for MozDef to read contents of S3 bucket containing CloudTrail logs
+Description: IAM Role to allow IAM users and systems in the infosec-prod AWS account to read contents of the infosec-isolated S3 bucket containing CloudTrail logs
 Metadata:
-  Source: https://github.com/mozilla/security/tree/master/operations/aws-cloudtrail-storage/mozdef_cloudtrail_s3_reader_role.yml
+  Source: https://github.com/mozilla/security/tree/master/operations/aws-cloudtrail-storage/infosec-prod_cloudtrail_s3_reader_role.yml
 Resources:
-  MozDefCloudTrailReaderPolicy:
+  CloudTrailReaderPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
       Description: Read CloudTrail S3 buckets
@@ -18,13 +18,13 @@ Resources:
           - Effect: Allow
             Action:
               - s3:Get*
-              - s3:List*
+              - s3:ListBucket*
             Resource:
               - arn:aws:s3:::mozilla-cloudtrail-logs
           - Effect: Allow
             Action:
-              - s3:Get*
-              - s3:List*
+              - s3:GetObject*
+              - s3:ListMultipartUploadParts
             Resource:
               - arn:aws:s3:::mozilla-cloudtrail-logs/*
   Role:
@@ -36,9 +36,7 @@ Resources:
           - Effect: Allow
             Principal:
               AWS: arn:aws:iam::371522382791:root
-              # At the moment this is not constrained to arn:aws:iam::371522382791:user/mozdef
-              # but it could be
             Action: sts:AssumeRole
       ManagedPolicyArns:
-        - !Ref MozDefCloudTrailReaderPolicy
-      RoleName: MozDef-CloudTrail-Log-Reader
+        - !Ref CloudTrailReaderPolicy
+      RoleName: Infosec-Prod-CloudTrail-Log-Reader
