@@ -1,32 +1,32 @@
-Mozilla Enterprise Information Security (EIS) provides these AWS Security Roles
-to enable Mozilla AWS account owners to delegate rights to EIS to provide
-security services for AWS accounts.
+Mozilla Security Assurance provides these AWS Security Roles
+to enable Mozilla AWS account owners to delegate rights to Security Assurance
+to provide security services for AWS accounts.
 
 # What do these templates do?
 
-You can delegate rights in your AWS account (member account) to EIS by deploying
-the CloudFormation templates in this repository which
-* Create a security auditing IAM role which grants EIS read only rights to
-  audit resources in the member account for security risks. You can see what 
-  rights in the member account are delegated to EIS by looking at 
+You can delegate rights in your AWS account (member account) to Security 
+Assurance by deploying  the CloudFormation templates in this repository which
+* Create a security auditing IAM role which grants Security Assurance read only
+  rights to audit resources in the member account for security risks. You can 
+  see what rights in the member account delegate by looking at 
   [the trust policy in this template](eis-security-audit-trusting-role.yml)
 * Create an incident response IAM role which delegates full administrative
   permissions from the member account to a dedicated incident response AWS 
-  account controlled by EIS. This dedicated `infosec-trusted` AWS account is a
-  locked down account that can only be used to both issue temporary STS
-  credentials for use during a security incident and to emit a notification to
-  both EIS and the member account that temporary credentials have been
-  generated. This notification is to ensure that it's not possible for anyone
-  (EIS incident responder or a potential attacker) to gain access to a member
-  account using the incident response role without both the account holder and
-  EIS being notified.
+  account controlled by Security Assurance. This dedicated `infosec-trusted` AWS
+  account is a locked down account that can only be used to both issue temporary
+  STS credentials for use during a security incident and to emit a notification 
+  to both Security Assurance and the member account that temporary credentials 
+  have been generated. This notification is to ensure that it's not possible for
+  anyone (an incident responder or a potential attacker) to gain access to a 
+  member account using the incident response role without both the account 
+  holder and Security Assurance being notified.
 * Create a Simple Notification Service (SNS) topic that will receive
   notifications if the incident response role is used. Optionally you can
   subscribe an email address to the SNS topic during stack creation
-* Create a GuardDuty member role that will allow EIS to enable GuardDuty in the
-  member account and link it up with the EIS GuardDuty master account which will
-  publish GuardDuty findings into the EIS Security Event and Information
-  Management system, MozDef.
+* Create a GuardDuty member role that will allow Security Assurance to enable 
+  GuardDuty in the member account and link it up with the Mozilla GuardDuty 
+  master account which will publish GuardDuty findings into the Mozilla Security
+  Event and Information Management system.
 
 # How do I use these templates?
 
@@ -45,10 +45,10 @@ don't have one, deploy a stack.
     template`
   * In the `Amazon S3 URL` field enter 
  
-    https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
+    https://s3.us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
 
 * Click the `Next` button
-* Enter an optional email address to receive notifcations at of use of the incident
+* Enter an optional email address to receive notifications at of use of the incident
   response role
 * On the `Specify stack details` click the `Next` button
 * On the `Configure stack options` page click the `Next` button
@@ -86,14 +86,10 @@ to create a new stack.
 
 * Start by clicking this button [![Deploy Roles](
 https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](
-https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=InfosecClientRoles&templateURL=https://s3.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml)
-* On the `Create stack` page click `Next`
-* On the `Specify stack details` enter an optional email address and click the
-  `Next` button
-* On the `Configure stack options` page click the `Next` button
-* On the `Review` page click the checkbox that says `I acknowledge that AWS 
-  CloudFormation might create IAM resources.`
-* Click the `Create stack` button
+https://us-west-2.console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/create/review?templateURL=https://s3.us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml&stackName=InfosecClientRoles)
+* Enter an email address if you'd like to subscribe to notifications of use of the Security Incident Response role
+* Click the checkbox that says `I acknowledge that this template might cause AWS CloudFormation to create IAM resources.`
+* Click the `Create` button
 * When the CloudFormation stack completes the creation process and the `Status`
   field changes from `CREATE_IN_PROGRESS` to `CREATE_COMPLETE` you're done.
 
@@ -115,7 +111,7 @@ AWS_DEFAULT_REGION=us-west-2 aws cloudformation create-stack \
 
 If you would like to consume a subset of the three services (security auditing,
 incident response and GuardDuty) instead of all three, contact Mozilla
-Enterprise Information Security for assistance.
+Security Assurance for assistance.
 
 # FAQ
 
@@ -135,13 +131,13 @@ Enterprise Information Security for assistance.
   optional email address entered when the stack is deployed?
   * The SNS topic created in the member account will receive any notifications
     and you can subscribe anything you'd like to that topic (email, SMS, lambda)
-* How do the IAM Role ARN values get communicated back to EIS?
+* How do the IAM Role ARN values get communicated back to Security Assurance?
   * Previously the `InfosecClientRoles` stack contained a Lambda function which
     emitted the ARN values to SNS. In the current version this has been changed
     to a CloudFormation custom resource that uses our [CloudFormation Cross Account Outputs](https://github.com/mozilla/cloudformation-cross-account-outputs)
     system instead.
-* When will GuardDuty events begin showing up in EIS MozDef?
+* When will GuardDuty events begin showing up in the Security Assurance SIEM?
   * The [GuardDuty Multi Account Manager](https://github.com/mozilla/guardduty-multi-account-manager/)
     runs nightly and links member accounts, such that GuardDuty data will be
-    present in EIS MozDef the day after the stack is deployed in the member
-    account.
+    present in the Mozilla SIEM the day after the stack is deployed in the 
+    member account.

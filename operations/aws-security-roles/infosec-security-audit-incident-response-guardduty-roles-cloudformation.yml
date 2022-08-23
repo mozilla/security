@@ -3,7 +3,7 @@ Description: Infosec Security Audit, Incident Response and GuardDuty Member Role
 Metadata:
   Source: https://github.com/mozilla/security/tree/master/operations/aws-security-roles/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
   URL: https://s3.us-west-2.amazonaws.com/public.us-west-2.infosec.mozilla.org/infosec-security-roles/cf/infosec-security-audit-incident-response-guardduty-roles-cloudformation.yml
-  TemplateVersion: 3.0.2
+  TemplateVersion: 3.1.0
 Parameters:
   EmailAddress:
     Type: String
@@ -48,101 +48,36 @@ Resources:
             Principal:
               AWS: arn:aws:iam::371522382791:root
             Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/SecurityAudit
       Policies:
-        - PolicyName: SecurityAudit
+        - PolicyName: MozillaSecurityAuditAugmentation
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Action:
-                  - acm-pca:List*
-                  - acm:Describe*
-                  - acm:List*
-                  - autoscaling:Describe*
                   - aws-portal:View*
                   - awsbillingconsole:View*
                   - cloudformation:Describe*
                   - cloudformation:Get*
                   - cloudformation:List*
-                  - cloudfront:Get*
-                  - cloudfront:List*
                   - cloudtrail:Describe*
                   - cloudtrail:Get*
                   - cloudtrail:List*
-                  - cloudwatch:Describe*
                   - cloudwatch:Get*
                   - cloudwatch:List*
-                  - config:Describe*
-                  - config:Get*
-                  - config:List*
-                  - directconnect:Describe*
                   - dynamodb:Describe*
                   - dynamodb:List*
-                  - ec2:Describe*
-                  - ecs:Describe*
-                  - ecs:List*
-                  - elasticache:Describe*
-                  - elasticbeanstalk:Describe*
-                  - elasticloadbalancing:Describe*
-                  - elasticmapreduce:Describe*
                   - elasticmapreduce:List*
-                  - es:Describe*
                   - es:Get*
                   - es:List*
                   - glacier:Describe*
-                  - glacier:GetVaultAccessPolicy
                   - glacier:List*
-                  - guardduty:Get*
-                  - guardduty:List*
-                  - iam:Get*
-                  - iam:List*
-                  - iam:Simulate*
-                  - inspector:Describe*
-                  - inspector:Get*
-                  - inspector:List*
-                  - kms:Describe*
-                  - kms:GetKey*
-                  - kms:List*
-                  - lambda:GetFunctionConfiguration
-                  - lambda:GetLayerVersionPolicy
-                  - lambda:GetPolicy
-                  - lambda:List*
-                  - rds:Describe*
-                  - rds:DownloadDBLogFilePortion
-                  - rds:ListTagsForResource
-                  - redshift:Describe*
-                  - route53:GetHostedZone
-                  - route53:ListHostedZones
-                  - route53:ListResourceRecordSets
-                  - route53domains:GetDomainDetail
-                  - route53domains:ListDomains
-                  - s3:GetAccelerateConfiguration
-                  - s3:GetAnalyticsConfiguration
-                  - s3:GetBucket*
-                  - s3:GetEncryptionConfiguration
-                  - s3:GetInventoryConfiguration
-                  - s3:GetLifecycleConfiguration
-                  - s3:GetLifecycleConfiguration
-                  - s3:GetMetricsConfiguration
-                  - s3:GetObjectAcl
-                  - s3:GetObjectVersionAcl
-                  - s3:GetReplicationConfiguration
                   - s3:List*
-                  - sdb:DomainMetadata
-                  - sdb:ListDomains
                   - ses:Get*
                   - ses:List*
-                  - sns:GetTopicAttributes
-                  - sns:ListSubscriptionsByTopic
-                  - sns:ListTopics
                   - sqs:Get*
-                  - sqs:List*
-                  - ssm:DescribeAutomationExecutions
-                  - ssm:DescribeInstance*
-                  - ssm:DescribePatch*
-                  - ssm:ListAssociation*
                   - storagegateway:Describe*
-                  - storagegateway:List*
-                  - support:DescribeTrustedAdvisor*
                 Effect: Allow
                 Resource: '*'
   InfosecIncidentResponseRole:
