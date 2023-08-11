@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM Role allowing the infosec-trusted AWS account to query the cloudformation-stack-emissions DynamoDB to
+  fetch security incident response IAM Role ARNs. https://github.com/mozilla/cloudformation-cross-account-outputs
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/cloudformation-stack-emissions-reader-role.yml
+  RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/27169856/Administering+the+AWS+Security+Auditing+and+Incident+Response+Services
+Mappings:
+  Variables:
+    TrustedInfosecAccount:
+      AccountId: 415589142697
+    CloudFormationStackEmissions:
+      TableArn: arn:aws:dynamodb:us-west-2:371522382791:table/cloudformation-stack-emissions
+Resources:
+  CloudFormationStackEmissionReaderIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CloudFormationStackEmissionReader
+      Description: IAM Role allowing the infosec-trusted AWS account to query the cloudformation-stack-emissions 
+        DynamoDB to fetch security incident response IAM Role ARNs. https://github.com/mozilla/cloudformation-cross-account-outputs
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowInfosecTrustedToAssume
+            Effect: Allow
+            Principal:
+              AWS: !Join [ '', [ 'arn:aws:iam::', !FindInMap [ Variables, TrustedInfosecAccount, AccountId ], ':root' ] ]
+            Action: sts:AssumeRole
+  CloudFormationStackEmissionReaderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:BatchGetItem
+              - dynamodb:Query
+            Resource:
+              - !FindInMap [ Variables, CloudFormationStackEmissions, TableArn ]
+              - !Join [ '', [ !FindInMap [ Variables, CloudFormationStackEmissions, TableArn ], '/*' ] ]
+            Condition:
+              "ForAllValues:StringEquals":
+                "dynamodb:Attributes":
+                  - aws-account-id
+                  - id
+                  - category
+                  - InfosecIncidentResponseRoleArn
+                  - InfosecIncidentResponseRoleName
+                  - BreakGlassSNSTopicArn
+                  - BreakGlassSNSTopicName
+              StringEqualsIfExists:
+                "dynamodb:Select": SPECIFIC_ATTRIBUTES
+      PolicyName: CloudFormationStackEmissionReader
+      Roles:
+        - !Ref CloudFormationStackEmissionReaderIAMRole
