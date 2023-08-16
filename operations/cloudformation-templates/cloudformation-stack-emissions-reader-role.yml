@@ -49,6 +49,11 @@ Resources:
                   - InfosecIncidentResponseRoleName
                   - BreakGlassSNSTopicArn
                   - BreakGlassSNSTopicName
+                  - stack-id
+                  - stack-name
+                  - region
+                  - last-updated
+                  - logical-resource-id
               StringEqualsIfExists:
                 "dynamodb:Select": SPECIFIC_ATTRIBUTES
       PolicyName: CloudFormationStackEmissionReader
