@@ -39,12 +39,19 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/SecurityAudit
       Policies:
-        - PolicyName: MozillaSecurityAuditAugmentation
+        - PolicyName: PreMigrationAWSPortalViewAccess
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Action:
                   - aws-portal:View*
+                Effect: Allow
+                Resource: '*'
+        - PolicyName: MozillaSecurityAuditAugmentation
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
                   - awsbillingconsole:View*
                   - cloudformation:Describe*
                   - cloudformation:Get*
@@ -66,6 +73,66 @@ Resources:
                   - ses:List*
                   - sqs:Get*
                   - storagegateway:Describe*
+                Effect: Allow
+                Resource: '*'
+        - PolicyName: UpdatedPoliciesForAWSPortalViewAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - account:GetAccountInformation
+                  - account:GetAlternateContact
+                  - account:GetChallengeQuestions
+                  - account:GetContactInformation
+                  - billing:GetBillingData
+                  - billing:GetBillingDetails
+                  - billing:GetBillingNotifications
+                  - billing:GetBillingPreferences
+                  - billing:GetContractInformation
+                  - billing:GetCredits
+                  - billing:GetIAMAccessPreference
+                  - billing:GetSellerOfRecord
+                  - billing:ListBillingViews
+                  - ce:DescribeNotificationSubscription
+                  - ce:DescribeReport
+                  - ce:GetAnomalies
+                  - ce:GetAnomalyMonitors
+                  - ce:GetAnomalySubscriptions
+                  - ce:GetCostAndUsage
+                  - ce:GetCostAndUsageWithResources
+                  - ce:GetCostCategories
+                  - ce:GetCostForecast
+                  - ce:GetDimensionValues
+                  - ce:GetPreferences
+                  - ce:GetReservationCoverage
+                  - ce:GetReservationPurchaseRecommendation
+                  - ce:GetReservationUtilization
+                  - ce:GetRightsizingRecommendation
+                  - ce:GetSavingsPlansCoverage
+                  - ce:GetSavingsPlansPurchaseRecommendation
+                  - ce:GetSavingsPlansUtilization
+                  - ce:GetSavingsPlansUtilizationDetails
+                  - ce:GetTags
+                  - ce:GetUsageForecast
+                  - ce:ListCostAllocationTags
+                  - ce:ListSavingsPlansPurchaseRecommendationGeneration
+                  - consolidatedbilling:GetAccountBillingRole
+                  - consolidatedbilling:ListLinkedAccounts
+                  - cur:GetClassicReport
+                  - cur:GetClassicReportPreferences
+                  - cur:GetUsageReport
+                  - cur:ValidateReportDestination
+                  - freetier:GetFreeTierAlertPreference
+                  - freetier:GetFreeTierUsage
+                  - invoicing:GetInvoiceEmailDeliveryPreferences
+                  - invoicing:GetInvoicePDF
+                  - invoicing:ListInvoiceSummaries
+                  - payments:GetPaymentInstrument
+                  - payments:GetPaymentStatus
+                  - payments:ListPaymentPreferences
+                  - tax:GetTaxInheritance
+                  - tax:GetTaxRegistrationDocument
+                  - tax:ListTaxRegistrations
                 Effect: Allow
                 Resource: '*'
   PublishInfosecSecurityAuditRoleArnToSNS:
