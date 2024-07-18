@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Auth0 SNS Logging IAM Users
+Metadata:
+  Source: https://github.com/mozilla/security/tree/master/operations/cloudformation-templates/auth0_rule_logging_sns_user.yaml
+Resources:
+  ProdTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Topic for Auth0 rules to log to
+      TopicName: Auth0ProdRuleLogEvents
+  ProdUser:
+    Type: AWS::IAM::User
+    Properties:
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              Effect: Allow
+              Action:
+                - sns:Publish
+                - sns:GetTopicAttributes
+              Resource: !Ref 'ProdTopic'
+          PolicyName: Auth0RuleLogEventSNSPublisher
+  ProdAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Serial: 1
+      UserName: !Ref 'ProdUser'
+  DevTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Topic for Auth0 rules to log to
+      TopicName: Auth0DevRuleLogEvents
+  DevUser:
+    Type: AWS::IAM::User
+    Properties:
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              Effect: Allow
+              Action:
+                - sns:Publish
+                - sns:GetTopicAttributes
+              Resource: !Ref 'DevTopic'
+          PolicyName: Auth0RuleLogEventSNSPublisher
+  DevAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      Serial: 1
+      UserName: !Ref 'DevUser'
+Outputs:
+  TopicARNConfigurationName:
+    Description: The Auth0 Rule Configuration Name for the Topic
+    Value: aws_logging_sns_topic_arn
+  AccessKeyIdConfigurationName:
+    Description: The Auth0 Rule Configuration Name for the Access Key ID
+    Value: aws_logging_access_key_id
+  SecretKeyConfigurationName:
+    Description: The Auth0 Rule Configuration Name for the Secret Key
+    Value: aws_logging_secret_key
+  ProdTopicARN:
+    Description: The SNS Topic ARN
+    Value: !Ref 'ProdTopic'
+  ProdAccessKeyId:
+    Description: The IAM User Access Key ID
+    Value: !Ref 'ProdAccessKey'
+  ProdSecretAccessKey:
+    Description: The IAM User Secret Access Key
+    Value: !GetAtt 'ProdAccessKey.SecretAccessKey'
+  DevTopicARN:
+    Description: The SNS Topic ARN
+    Value: !Ref 'DevTopic'
+  DevAccessKeyId:
+    Description: The IAM User Access Key ID
+    Value: !Ref 'DevAccessKey'
+  DevSecretAccessKey:
+    Description: The IAM User Secret Access Key
+    Value: !GetAtt 'DevAccessKey.SecretAccessKey'
