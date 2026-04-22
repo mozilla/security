@@ -1,0 +1,82 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This role is to be assumed by the Crowdstrike connector in order to forward logs to our Falcon SIEM",
+  "Resources": {
+    "crowdstrike_cloudtrail_role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "crowdstrike_cloudtrail_role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  "arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors"
+                ]
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                    "sts:ExternalId": "91d6bf9710964316a365b416407688d4"
+                    }
+                }
+            }
+
+        ]
+    },
+        "Policies": [
+          {
+            "PolicyName": "crowdstrike-cloudtrail-access",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:GetObject",
+                  "Resource": [
+                    "arn:aws:s3:::mozilla-cloudtrail-logs/AWSLogs/*"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:ListBucket",
+                  "Resource": [
+                    "arn:aws:s3:::mozilla-cloudtrail-logs"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueUrl",
+                    "sqs:GetQueueAttributes"
+                    ],
+                  "Resource": "arn:aws:sqs:us-west-2:088944123687:Cloudtrail-To-Splunk"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "RoleArn": {
+      "Description": "The ARN of the newly created IAM Role",
+      "Value": {
+        "Fn::GetAtt": [
+          "crowdstrike_cloudtrail_role",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-RoleArn"
+        }
+      }
+    }
+  }
+}

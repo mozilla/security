@@ -1,0 +1,89 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "This role is to be assumed by the Crowdstrike connector in order to forward logs to our Falcon SIEM",
+  "Resources": {
+    "infosec_prod_crowdstrike_guardduty_role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "infosec_prod_crowdstrike_guardduty_role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  "arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors"
+                ]
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                    "sts:ExternalId": "91d6bf9710964316a365b416407688d4"
+                    }
+                }
+            }
+
+        ]
+    },
+        "Policies": [
+          {
+            "PolicyName": "crowdstrike-guardduty-access",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:GetObject",
+                  "Resource": [
+//                    "TBD"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:ListBucket",
+                  "Resource": [
+//                    "TBD"
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:GetQueueUrl",
+                    "sqs:GetQueueAttributes"
+                    ],
+                  "Resource": "arn:aws:sqs:us-west-2:371522382791:GuardDuty-To-Splunk"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "kms:Decrypt"
+                    ],
+                  "Resource": "arn:aws:kms:::key/*" //this is the recommended setting from the instructions but I think we should scope it down to the specific key(s)
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "RoleArn": {
+      "Description": "The ARN of the newly created IAM Role",
+      "Value": {
+        "Fn::GetAtt": [
+          "infosec_prod_crowdstrike_guardduty_role",
+          "Arn"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-RoleArn"
+        }
+      }
+    }
+  }
+}
