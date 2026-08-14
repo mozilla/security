@@ -7,16 +7,16 @@ Description: >
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/crowdstrike_guardduty_findings_role.yaml
   RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/2866610188/Administering+the+AWS+GuardDuty+Event+Service
-  TemplateVersion: 1.0.0
+  TemplateVersion: 1.0.1
 
 Parameters:
   CrowdStrikeRegion:
     Type: String
     AllowedValues:
-      - US-1
-      - US-2
-      - EU-1
-      - US-GOV-1
+      - US1
+      - US2
+      - EU1
+      - USGOV1
     Description: >-
       CrowdStrike Falcon cloud region that will assume this role. Selects the
       trusted CrowdStrike 3PI connector account ARN used as the trust policy
@@ -35,10 +35,10 @@ Parameters:
 Mappings:
   Variables:
     CrowdStrikeAccount:
-      US-1: arn:aws:iam::292230061137:role/crowdstrike-3pi-us1-connectors
-      US-2: arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors
-      EU-1: arn:aws:iam::292230061137:role/crowdstrike-3pi-eu1-connectors
-      US-GOV-1: arn:aws-us-gov:iam::358431324613:role/crowdstrike-3pi-laggar-connectors
+      US1: arn:aws:iam::292230061137:role/crowdstrike-3pi-us1-connectors
+      US2: arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors
+      EU1: arn:aws:iam::292230061137:role/crowdstrike-3pi-eu1-connectors
+      USGOV1: arn:aws-us-gov:iam::358431324613:role/crowdstrike-3pi-laggar-connectors
     S3:
       FindingsBucketRegion: us-west-2
       FindingsBucketSuffix: guardduty-findings
@@ -47,6 +47,15 @@ Mappings:
       FindingsQueueName: guardduty-findings-s3-events
     IAM:
       RoleName: CrowdStrike-GuardDuty-Findings-Reader
+
+Rules:
+  AllowedAccountsOnly:
+    Assertions:
+      - Assert: !Contains
+          - - '947705099632'
+            - '371522382791'
+          - !Ref "AWS::AccountId"
+        AssertDescription: "This template can only be deployed in specific accounts"
 
 Resources:
 
