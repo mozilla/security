@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Creates an S3 bucket for GuardDuty findings storage (retained on stack deletion),
+  a KMS key for bucket encryption, an SQS queue that receives S3 ObjectCreated events
+  from that bucket, and a GuardDuty PublishingDestination pointing to the bucket.
+
+Metadata:
+  Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/guardduty_findings_bucket.yaml
+  RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/2866610188/Administering+the+AWS+GuardDuty+Event+Service
+  TemplateVersion: 1.0.1
+
+Parameters:
+  GuardDutyDetectorId:
+    Type: String
+    Description: ID of the existing GuardDuty detector to configure findings export for
+
+Mappings:
+  Variables:
+    KMS:
+      KeyAlias: alias/guardduty-findings
+    SQS:
+      VisibilityTimeout: 300  # 5 minutes
+      MessageRetentionPeriod: 1209600  # 14 days
+
+Rules:
+  AllowedAccountsOnly:
+    Assertions:
+      - Assert: !Contains
+          - - '947705099632'
+            - '371522382791'
+          - !Ref "AWS::AccountId"
+        AssertDescription: "This template can only be deployed in specific accounts"
+
+Resources:
+
+  GuardDutyFindingsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Encrypts GuardDuty findings stored in the findings S3 bucket
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: EnableRootAccountPermissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: AllowGuardDutyToEncryptFindings
+            Effect: Allow
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action:
+              - kms:GenerateDataKey
+              - kms:Decrypt
+            Resource: '*'
+
+  GuardDutyFindingsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !FindInMap [Variables, KMS, KeyAlias]
+      TargetKeyId: !Ref GuardDutyFindingsKey
+
+  GuardDutyFindingsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: guardduty-findings-s3-events
+      VisibilityTimeout: !FindInMap [Variables, SQS, VisibilityTimeout]
+      MessageRetentionPeriod: !FindInMap [Variables, SQS, MessageRetentionPeriod]
+
+  GuardDutyFindingsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref GuardDutyFindingsQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowS3BucketToSendMessages
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt GuardDutyFindingsQueue.Arn
+            Condition:
+              StringEquals:
+                'aws:SourceAccount': !Ref 'AWS::AccountId'
+
+  GuardDutyFindingsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    DependsOn: GuardDutyFindingsQueuePolicy
+    Properties:
+      BucketName: !Sub '${AWS::AccountId}-${AWS::Region}-guardduty-findings'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+              KMSMasterKeyID: !Ref GuardDutyFindingsKey
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Queue: !GetAtt GuardDutyFindingsQueue.Arn
+
+  GuardDutyFindingsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref GuardDutyFindingsBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowGuardDutyGetBucketLocation
+            Effect: Allow
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action:
+              - s3:GetBucketLocation
+            Resource:
+              - !GetAtt GuardDutyFindingsBucket.Arn
+              - !Sub '${GuardDutyFindingsBucket.Arn}/*'
+          - Sid: AllowGuardDutyPutObject
+            Effect: Allow
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action:
+              - s3:PutObject
+            Resource:
+              - !GetAtt GuardDutyFindingsBucket.Arn
+              - !Sub '${GuardDutyFindingsBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                's3:x-amz-acl': bucket-owner-full-control
+          - Sid: DenyNonHTTPS
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt GuardDutyFindingsBucket.Arn
+              - !Sub '${GuardDutyFindingsBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': 'false'
+
+  GuardDutyPublishingDestination:
+    Type: AWS::GuardDuty::PublishingDestination
+    DependsOn: GuardDutyFindingsBucketPolicy
+    Properties:
+      DetectorId: !Ref GuardDutyDetectorId
+      DestinationType: S3
+      DestinationProperties:
+        DestinationArn: !GetAtt GuardDutyFindingsBucket.Arn
+        KmsKeyArn: !GetAtt GuardDutyFindingsKey.Arn
+
+Outputs:
+  FindingsBucketName:
+    Description: Name of the S3 bucket where GuardDuty findings are stored
+    Value: !Ref GuardDutyFindingsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-FindingsBucketName'
+
+  FindingsBucketArn:
+    Description: ARN of the S3 bucket where GuardDuty findings are stored
+    Value: !GetAtt GuardDutyFindingsBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-FindingsBucketArn'
+
+  FindingsQueueArn:
+    Description: ARN of the SQS queue receiving S3 ObjectCreated events for GuardDuty findings
+    Value: !GetAtt GuardDutyFindingsQueue.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-FindingsQueueArn'
+
+  FindingsQueueUrl:
+    Description: URL of the SQS queue receiving S3 ObjectCreated events for GuardDuty findings
+    Value: !Ref GuardDutyFindingsQueue
+    Export:
+      Name: !Sub '${AWS::StackName}-FindingsQueueUrl'
+
+  FindingsKmsKeyArn:
+    Description: ARN of the KMS key used to encrypt GuardDuty findings in S3
+    Value: !GetAtt GuardDutyFindingsKey.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-FindingsKmsKeyArn'
+
+  FindingsKmsKeyAlias:
+    Description: Alias of the KMS key used to encrypt GuardDuty findings in S3
+    Value: !FindInMap [Variables, KMS, KeyAlias]
+    Export:
+      Name: !Sub '${AWS::StackName}-FindingsKmsKeyAlias'
