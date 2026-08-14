@@ -7,7 +7,7 @@ Description: >
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/guardduty_findings_bucket.yaml
   RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/2866610188/Administering+the+AWS+GuardDuty+Event+Service
-  TemplateVersion: 1.0.0
+  TemplateVersion: 1.0.1
 
 Parameters:
   GuardDutyDetectorId:
@@ -21,6 +21,15 @@ Mappings:
     SQS:
       VisibilityTimeout: 300  # 5 minutes
       MessageRetentionPeriod: 1209600  # 14 days
+
+Rules:
+  AllowedAccountsOnly:
+    Assertions:
+      - Assert: !Contains
+          - - '947705099632'
+            - '371522382791'
+          - !Ref "AWS::AccountId"
+        AssertDescription: "This template can only be deployed in specific accounts"
 
 Resources:
 
@@ -110,12 +119,20 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-          - Sid: AllowGuardDutyPutObject
+          - Sid: AllowGuardDutyGetBucketLocation
             Effect: Allow
             Principal:
               Service: guardduty.amazonaws.com
             Action:
               - s3:GetBucketLocation
+            Resource:
+              - !GetAtt GuardDutyFindingsBucket.Arn
+              - !Sub '${GuardDutyFindingsBucket.Arn}/*'
+          - Sid: AllowGuardDutyPutObject
+            Effect: Allow
+            Principal:
+              Service: guardduty.amazonaws.com
+            Action:
               - s3:PutObject
             Resource:
               - !GetAtt GuardDutyFindingsBucket.Arn
