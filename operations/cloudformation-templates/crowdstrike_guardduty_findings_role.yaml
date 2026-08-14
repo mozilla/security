@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Creates an IAM Role that CrowdStrike Falcon (3PI GuardDuty connector) assumes
+  to read GuardDuty findings from the findings S3 bucket and SQS queue, and to
+  decrypt them using the associated KMS key.
+
+Metadata:
+  Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/crowdstrike_guardduty_findings_role.yaml
+  RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/2866610188/Administering+the+AWS+GuardDuty+Event+Service
+  TemplateVersion: 1.0.1
+
+Parameters:
+  CrowdStrikeRegion:
+    Type: String
+    AllowedValues:
+      - US1
+      - US2
+      - EU1
+      - USGOV1
+    Description: >-
+      CrowdStrike Falcon cloud region that will assume this role. Selects the
+      trusted CrowdStrike 3PI connector account ARN used as the trust policy
+      Principal.
+  ExternalId:
+    Type: String
+    Description: >-
+      External ID generated for this connection in the CrowdStrike Falcon
+      console. Enforced via the trust policy's sts:ExternalId condition.
+  KMSKeyArn:
+    Type: String
+    Description: >-
+      ARN of the KMS key used to encrypt the GuardDuty findings S3 bucket.
+      This role is granted kms:Decrypt on it.
+
+Mappings:
+  Variables:
+    CrowdStrikeAccount:
+      US1: arn:aws:iam::292230061137:role/crowdstrike-3pi-us1-connectors
+      US2: arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors
+      EU1: arn:aws:iam::292230061137:role/crowdstrike-3pi-eu1-connectors
+      USGOV1: arn:aws-us-gov:iam::358431324613:role/crowdstrike-3pi-laggar-connectors
+    S3:
+      FindingsBucketRegion: us-west-2
+      FindingsBucketSuffix: guardduty-findings
+    SQS:
+      FindingsQueueRegion: us-west-2
+      FindingsQueueName: guardduty-findings-s3-events
+    IAM:
+      RoleName: CrowdStrike-GuardDuty-Findings-Reader
+
+Rules:
+  AllowedAccountsOnly:
+    Assertions:
+      - Assert: !Contains
+          - - '947705099632'
+            - '371522382791'
+          - !Ref "AWS::AccountId"
+        AssertDescription: "This template can only be deployed in specific accounts"
+
+Resources:
+
+  CrowdStrikeGuardDutyFindingsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !FindInMap [Variables, IAM, RoleName]
+      Description: Allows CrowdStrike Falcon to read GuardDuty findings via S3 and SQS
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [Variables, CrowdStrikeAccount, !Ref CrowdStrikeRegion]
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref ExternalId
+
+  CrowdStrikeGuardDutyFindingsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Grants read access to GuardDuty findings in S3 and SQS, and decrypt on the findings KMS key
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowGetGuardDutyFindingsObjects
+            Effect: Allow
+            Action: s3:GetObject
+            Resource: !Sub
+              - 'arn:aws:s3:::${AWS::AccountId}-${BucketRegion}-${BucketSuffix}/*'
+              - BucketRegion: !FindInMap [Variables, S3, FindingsBucketRegion]
+                BucketSuffix: !FindInMap [Variables, S3, FindingsBucketSuffix]
+          - Sid: AllowListGuardDutyFindingsBucket
+            Effect: Allow
+            Action: s3:ListBucket
+            Resource: !Sub
+              - 'arn:aws:s3:::${AWS::AccountId}-${BucketRegion}-${BucketSuffix}'
+              - BucketRegion: !FindInMap [Variables, S3, FindingsBucketRegion]
+                BucketSuffix: !FindInMap [Variables, S3, FindingsBucketSuffix]
+          - Sid: AllowReadGuardDutyFindingsQueue
+            Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueUrl
+              - sqs:GetQueueAttributes
+            Resource: !Sub
+              - 'arn:aws:sqs:${QueueRegion}:${AWS::AccountId}:${QueueName}'
+              - QueueRegion: !FindInMap [Variables, SQS, FindingsQueueRegion]
+                QueueName: !FindInMap [Variables, SQS, FindingsQueueName]
+          - Sid: AllowDecryptGuardDutyFindingsKey
+            Effect: Allow
+            Action: kms:Decrypt
+            Resource: !Ref KMSKeyArn
+      Roles:
+        - !Ref CrowdStrikeGuardDutyFindingsRole
+
+Outputs:
+  RoleArn:
+    Description: ARN of the IAM Role assumed by CrowdStrike Falcon to read GuardDuty findings
+    Value: !GetAtt CrowdStrikeGuardDutyFindingsRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleArn'
+
+  RoleName:
+    Description: Name of the IAM Role assumed by CrowdStrike Falcon to read GuardDuty findings
+    Value: !Ref CrowdStrikeGuardDutyFindingsRole
+    Export:
+      Name: !Sub '${AWS::StackName}-RoleName'
