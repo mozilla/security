@@ -6,7 +6,7 @@ Description: >
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/crowdstrike_cloudtrail_reader_role.yaml
   RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/27168536/Administering+the+AWS+Secure+CloudTrail+Storage+System
-  TemplateVersion: '1.0.1'
+  TemplateVersion: '1.0.2'
 
 Parameters:
   CrowdStrikeRegion:
@@ -38,6 +38,15 @@ Mappings:
       '088944123687': mozilla-cloudtrail-logs
     IAM:
       RoleName: CrowdStrike-CloudTrail-Reader
+
+Rules:
+  AllowedAccountsOnly:
+    Assertions:
+      - Assert: !Contains
+          - - '361527076523'
+            - '088944123687'
+          - !Ref "AWS::AccountId"
+        AssertDescription: "This template can only be deployed in specific accounts"
 
 Resources:
 
