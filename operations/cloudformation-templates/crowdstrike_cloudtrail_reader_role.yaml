@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: '2010-09-09'
-
 Description: >
   Creates an IAM Role that CrowdStrike Falcon assumes to read CloudTrail logs
   from the shared Mozilla CloudTrail S3 bucket for security event ingestion.
@@ -7,7 +6,7 @@ Description: >
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/crowdstrike_cloudtrail_reader_role.yaml
   RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/27168536/Administering+the+AWS+Secure+CloudTrail+Storage+System
-  TemplateVersion: '1.0.0'
+  TemplateVersion: '1.0.1'
 
 Parameters:
   CrowdStrikeRegion:
@@ -18,33 +17,49 @@ Parameters:
       - EU1
       - USGOV1
     Description: >-
-      CrowdStrike Falcon cloud region that will assume this role.
-
+      CrowdStrike Falcon cloud region that will assume this role. Selects the
+      trusted CrowdStrike 3PI connector account ARN used as the trust policy
+      Principal.
   ExternalId:
     Type: String
-    NoEcho: true
     Description: >-
       External ID generated for this connection in the CrowdStrike Falcon
-      console.
+      console. Enforced via the trust policy's sts:ExternalId condition.
 
 Mappings:
-  CrowdStrikeAccounts:
-    US1:
-      RoleArn: arn:aws:iam::292230061137:role/crowdstrike-3pi-us1-connectors
-    US2:
-      RoleArn: arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors
-    EU1:
-      RoleArn: arn:aws:iam::292230061137:role/crowdstrike-3pi-eu1-connectors
-    USGOV1:
-      RoleArn: arn:aws-us-gov:iam::358431324613:role/crowdstrike-3pi-laggar-connectors
-
-  CloudTrailBuckets:
-    '361527076523':
-      BucketName: moz-cloudtrail-logs
-    '088944123687':
-      BucketName: mozilla-cloudtrail-logs
+  Variables:
+    CrowdStrikeAccount:
+      US1: arn:aws:iam::292230061137:role/crowdstrike-3pi-us1-connectors
+      US2: arn:aws:iam::292230061137:role/crowdstrike-3pi-us2-connectors
+      EU1: arn:aws:iam::292230061137:role/crowdstrike-3pi-eu1-connectors
+      USGOV1: arn:aws-us-gov:iam::358431324613:role/crowdstrike-3pi-laggar-connectors
+    CloudTrailBucketNameByAccount:
+      '361527076523': moz-cloudtrail-logs
+      '088944123687': mozilla-cloudtrail-logs
+    IAM:
+      RoleName: CrowdStrike-CloudTrail-Reader
 
 Resources:
+
+  CrowdStrikeCloudTrailReaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !FindInMap [Variables, IAM, RoleName]
+      Description: Allows CrowdStrike Falcon to read CloudTrail logs from the shared CloudTrail S3 bucket
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - !FindInMap [Variables, CrowdStrikeAccount, !Ref CrowdStrikeRegion]
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref ExternalId
+      ManagedPolicyArns:
+        - !Ref CrowdStrikeCloudTrailReaderPolicy
+
   CrowdStrikeCloudTrailReaderPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -58,65 +73,32 @@ Resources:
               - s3:ListAllMyBuckets
               - s3:GetBucketLocation
             Resource: '*'
-
           - Sid: AllowGetAndListCloudTrailBucket
             Effect: Allow
             Action:
               - s3:Get*
               - s3:ListBucket*
             Resource: !Sub
-              - 'arn:${AWS::Partition}:s3:::${BucketName}'
-              - BucketName: !FindInMap
-                  - CloudTrailBuckets
-                  - !Ref AWS::AccountId
-                  - BucketName
-
+              - 'arn:aws:s3:::${BucketName}'
+              - BucketName: !FindInMap [Variables, CloudTrailBucketNameByAccount, !Ref 'AWS::AccountId']
           - Sid: AllowGetCloudTrailObjects
             Effect: Allow
             Action:
               - s3:GetObject*
               - s3:ListMultipartUploadParts
             Resource: !Sub
-              - 'arn:${AWS::Partition}:s3:::${BucketName}/*'
-              - BucketName: !FindInMap
-                  - CloudTrailBuckets
-                  - !Ref AWS::AccountId
-                  - BucketName
-
-  CrowdStrikeCloudTrailReaderRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: CrowdStrike-CloudTrail-Reader
-      Description: >-
-        Allows CrowdStrike Falcon to read CloudTrail logs from the shared
-        CloudTrail S3 bucket.
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              AWS:
-                - !FindInMap
-                  - CrowdStrikeAccounts
-                  - !Ref CrowdStrikeRegion
-                  - RoleArn
-            Action:
-              - sts:AssumeRole
-            Condition:
-              StringEquals:
-                'sts:ExternalId': !Ref ExternalId
-      ManagedPolicyArns:
-        - !Ref CrowdStrikeCloudTrailReaderPolicy
+              - 'arn:aws:s3:::${BucketName}/*'
+              - BucketName: !FindInMap [Variables, CloudTrailBucketNameByAccount, !Ref 'AWS::AccountId']
 
 Outputs:
   RoleArn:
-    Description: ARN of the IAM Role assumed by CrowdStrike Falcon
+    Description: ARN of the IAM Role assumed by CrowdStrike Falcon to read CloudTrail logs
     Value: !GetAtt CrowdStrikeCloudTrailReaderRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-RoleArn'
 
   RoleName:
-    Description: Name of the IAM Role assumed by CrowdStrike Falcon
+    Description: Name of the IAM Role assumed by CrowdStrike Falcon to read CloudTrail logs
     Value: !Ref CrowdStrikeCloudTrailReaderRole
     Export:
       Name: !Sub '${AWS::StackName}-RoleName'
