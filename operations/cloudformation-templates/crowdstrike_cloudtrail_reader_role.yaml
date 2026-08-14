@@ -6,7 +6,7 @@ Description: >
 Metadata:
   Source: https://github.com/mozilla/security/blob/master/operations/cloudformation-templates/crowdstrike_cloudtrail_reader_role.yaml
   RelatedDocumentation: https://mozilla-hub.atlassian.net/wiki/spaces/SECURITY/pages/27168536/Administering+the+AWS+Secure+CloudTrail+Storage+System
-  TemplateVersion: '1.0.2'
+  TemplateVersion: '1.0.3'
 
 Parameters:
   CrowdStrikeRegion:
@@ -34,8 +34,11 @@ Mappings:
       EU1: arn:aws:iam::292230061137:role/crowdstrike-3pi-eu1-connectors
       USGOV1: arn:aws-us-gov:iam::358431324613:role/crowdstrike-3pi-laggar-connectors
     CloudTrailBucketNameByAccount:
-      '361527076523': moz-cloudtrail-logs
+      '351644144250': moz-cloudtrail-logs
       '088944123687': mozilla-cloudtrail-logs
+    SQSQueueNameByAccount:
+      '351644144250': splunk-cloudtrail-export
+      '088944123687': Cloudtrail-To-Splunk
     IAM:
       RoleName: CrowdStrike-CloudTrail-Reader
 
@@ -43,7 +46,7 @@ Rules:
   AllowedAccountsOnly:
     Assertions:
       - Assert: !Contains
-          - - '361527076523'
+          - - '351644144250'
             - '088944123687'
           - !Ref "AWS::AccountId"
         AssertDescription: "This template can only be deployed in specific accounts"
@@ -98,6 +101,16 @@ Resources:
             Resource: !Sub
               - 'arn:aws:s3:::${BucketName}/*'
               - BucketName: !FindInMap [Variables, CloudTrailBucketNameByAccount, !Ref 'AWS::AccountId']
+          - Sid: AllowReceiveS3SQSMessages
+            Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueUrl
+              - sqs:GetQueueAttributes
+            Resource: !Sub
+              - 'arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${SQSQueueName}'
+              - SQSQueueName: !FindInMap [ Variables, SQSQueueNameByAccount, !Ref 'AWS::AccountId' ]
 
 Outputs:
   RoleArn:
